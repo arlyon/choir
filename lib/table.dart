@@ -65,7 +65,6 @@ class _CheckedOutListState extends State<CheckedOutList> {
 
 
   Future<List<Map<String, dynamic>>> _fetchCheckedOutItems(LibsqlClient client) async {
-    await client.sync();
     final results = await client.query('SELECT work_title, user_name, checkout_timestamp FROM checked_out_works ORDER BY checkout_timestamp DESC');
     return results;
   }
@@ -117,40 +116,67 @@ class _CheckedOutListState extends State<CheckedOutList> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _checkedOutItemsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error loading data: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('No items currently checked out.'));
-        } else {
-          final items = snapshot.data!;
-          return RefreshIndicator( // Add pull-to-refresh
-            onRefresh: _refreshData,
-            child: ListView.builder(
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                // Safely access map keys, providing default values or checks
-                final title = item['work_title']?.toString() ?? 'Unknown Title';
-                final user = item['user_name']?.toString() ?? 'Unknown User';
-                final timestamp = item['checkout_timestamp']?.toString() ?? 'No Date';
-                // You might want to format the timestamp nicely
-                // final formattedTime = DateFormat.yMd().add_Hms().format(DateTime.parse(timestamp));
+    // Wrap the entire FutureBuilder result in RefreshIndicator
+    return RefreshIndicator(
+      onRefresh: _refreshData,
+      child: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _checkedOutItemsFuture,
+        builder: (context, snapshot) {
+          // Handle loading state
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            // Show loading indicator within a scrollable view for RefreshIndicator
+            return ListView(
+              children: const [Center(child: CircularProgressIndicator())],
+            );
+          }
 
-                return ListTile(
-                  title: Text(title),
-                  subtitle: Text('Checked out by: $user'),
-                  trailing: Text(timestamp), // Or formattedTime
-                );
-              },
-            ),
+          // Handle error state
+          if (snapshot.hasError) {
+            // Show error message within a scrollable view
+            return ListView(
+              children: [Center(child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('Error loading data: ${snapshot.error}'),
+              ))],
+            );
+          }
+
+          // Handle empty data state
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            // Show empty message within a scrollable view
+             return LayoutBuilder( // Use LayoutBuilder to get constraints
+               builder: (context, constraints) {
+                 return SingleChildScrollView( // Ensure scrollability
+                   physics: const AlwaysScrollableScrollPhysics(),
+                   child: ConstrainedBox( // Ensure it takes at least viewport height
+                     constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                     child: const Center(child: Text('No items currently checked out.')),
+                   ),
+                 );
+               }
+             );
+          }
+
+          // Handle success state (data available)
+          final items = snapshot.data!;
+          return ListView.builder(
+            // physics: const AlwaysScrollableScrollPhysics(), // Already scrollable
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final title = item['work_title']?.toString() ?? 'Unknown Title';
+              final user = item['user_name']?.toString() ?? 'Unknown User';
+              final timestamp = item['checkout_timestamp']?.toString() ?? 'No Date';
+
+              return ListTile(
+                title: Text(title),
+                subtitle: Text('Checked out by: $user'),
+                trailing: Text(timestamp),
+              );
+            },
           );
-        }
-      },
+        },
+      ),
     );
   }
 }
