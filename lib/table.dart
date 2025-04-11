@@ -12,7 +12,7 @@ class CheckedOutList extends StatefulWidget {
 }
 
 class _CheckedOutListState extends State<CheckedOutList> {
-  late final Future<List<Map<String, dynamic>>> _checkedOutItemsFuture;
+  late Future<List<Map<String, dynamic>>> _checkedOutItemsFuture;
   LibsqlClient? _client;
   Timer? _syncTimer;
 
@@ -65,6 +65,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
 
 
   Future<List<Map<String, dynamic>>> _fetchCheckedOutItems(LibsqlClient client) async {
+    await client.sync();
     final results = await client.query('SELECT work_title, user_name, checkout_timestamp FROM checked_out_works ORDER BY checkout_timestamp DESC');
     return results;
   }
@@ -160,18 +161,20 @@ class _CheckedOutListState extends State<CheckedOutList> {
           // Handle success state (data available)
           final items = snapshot.data!;
           return ListView.builder(
-            // physics: const AlwaysScrollableScrollPhysics(), // Already scrollable
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
               final title = item['work_title']?.toString() ?? 'Unknown Title';
               final user = item['user_name']?.toString() ?? 'Unknown User';
+
               final timestamp = item['checkout_timestamp']?.toString() ?? 'No Date';
+              
 
               return ListTile(
                 title: Text(title),
                 subtitle: Text('Checked out by: $user'),
                 trailing: Text(timestamp),
+                leading: Icon(item['return_timestamp'] != null ? Icons.archive_sharp : Icons.hide_source_rounded),
               );
             },
           );
