@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'database_helper.dart';
 
@@ -29,6 +30,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
 
   Future<void> _nextStep() async {
     if (_currentStep < _steps.length - 1) {
+      HapticFeedback.lightImpact();
       setState(() {
         _currentStep++;
       });
@@ -78,6 +80,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
   }
 
   Widget _buildStepContent(int stepIndex) {
+    final theme = Theme.of(context);
     switch (stepIndex) {
       case 0:
       case 2:
@@ -88,7 +91,9 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   ? 'Scan the QR code on the music booklet.'
                   : 'Scan the QR code for the person.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).highlightColor),
+              style: theme.textTheme.labelMedium!.copyWith(
+                color: theme.disabledColor,
+              ),
             ),
             Expanded(
               child: Padding(
@@ -143,8 +148,14 @@ class _MultiStepModalState extends State<MultiStepModal> {
                 style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: 20),
-              Text('Work ID: ${_workId ?? 'Not Scanned'}', style: TextStyle(color: Theme.of(context).colorScheme.primary),),
-              Text('User ID: ${_userId ?? 'Not Scanned'}', style: TextStyle(color: Theme.of(context).colorScheme.primary),),
+              Text(
+                'Work ID: ${_workId ?? 'Not Scanned'}',
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              ),
+              Text(
+                'User ID: ${_userId ?? 'Not Scanned'}',
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              ),
               const SizedBox(height: 20),
               if (_workId == null || _userId == null)
                 Text(
@@ -175,7 +186,9 @@ class _MultiStepModalState extends State<MultiStepModal> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(created ? 'Checkout successful!' : 'Return successful!'),
+            content: Text(
+              created ? 'Checkout successful!' : 'Return successful!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -210,121 +223,99 @@ class _MultiStepModalState extends State<MultiStepModal> {
     }
   }
 
+  void _openSearch() {}
+
   @override
   void dispose() {
     // Ensure scanner is stopped and controller disposed
     _scannerController.stop();
     _scannerController.dispose();
+    HapticFeedback.lightImpact();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: FractionallySizedBox(
-        heightFactor:
-            0.7, // Adjust height factor as needed (e.g., 0.7 for 70% of screen height)
-        child: Scaffold(
-          // Use Scaffold for AppBar and consistent structure
-          appBar: AppBar(
-            title: Text(
-              "Check in / out",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18.0,
-                color: Theme.of(context).colorScheme.primaryContainer,
-              ),
-            ),
-            automaticallyImplyLeading: false, // Hide default back button
-            centerTitle: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: _currentStep > 0 ? _previousStep : null,
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context), // Add a close button
-              ),
-            ],
-            // bottom: PreferredSize(
-            //   // Add step indicator here
-            //   preferredSize: const Size.fromHeight(40.0),
-            //   child: Padding(
-            //     padding: const EdgeInsets.symmetric(
-            //       horizontal: 16.0,
-            //       vertical: 8.0,
-            //     ),
-            //     child: Row(
-            //       mainAxisAlignment: MainAxisAlignment.spaceAround,
-            //       children: List.generate(_steps.length, (index) {
-            //         bool isActive = index == _currentStep;
-            //         bool isCompleted = index < _currentStep;
-            //         Color color =
-            //             isActive
-            //                 ? Theme.of(context).colorScheme.primary
-            //                 : isCompleted
-            //                 ? Theme.of(context).colorScheme.primary
-            //                 : Theme.of(
-            //                   context,
-            //                 ).colorScheme.onSurface.withOpacity(0.38);
-            //         FontWeight weight =
-            //             isActive ? FontWeight.bold : FontWeight.normal;
-
-            //         return Text(
-            //           _steps[index],
-            //           style: TextStyle(color: color, fontWeight: weight),
-            //         );
-            //       }),
+    final theme = Theme.of(context);
+    return PopScope(
+      canPop: _currentStep == 0,
+      onPopInvokedWithResult: (didPop, result) => {
+        _previousStep()
+      },
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: FractionallySizedBox(
+          // Adjust height factor as needed (e.g., 0.7 for 70% of screen height)
+          heightFactor: 0.7,
+          child: Scaffold(
+            // Use Scaffold for AppBar and consistent structure
+            backgroundColor: Colors.transparent,
+            // appBar: AppBar(
+            //   backgroundColor: Colors.transparent,
+            //   title: Text(
+            //     "Check in / out",
+            //     style: theme.textTheme.titleSmall!.copyWith(
+            //       color: theme.colorScheme.onPrimaryContainer,
             //     ),
             //   ),
+            //   automaticallyImplyLeading: false, // Hide default back button
+            //   centerTitle: true,
+            //   leading: IconButton(
+            //     icon: const Icon(Icons.arrow_back),
+            //     onPressed: _currentStep > 0 ? _previousStep : null,
+            //   ),
+            //   actions: [
+            //     IconButton(
+            //       icon: const Icon(Icons.close),
+            //       onPressed: () => Navigator.pop(context), // Add a close button
+            //     ),
+            //   ],
             // ),
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Expanded(child: _buildStepContent(_currentStep)),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children:
-                      _currentStep != 4
-                          ? [
-                            ElevatedButton(
-                              onPressed: null,
-                              child: const Text("Search"),
-                            ),
-                            ElevatedButton(
-                              onPressed:
-                                  _currentStep == 1
-                                      ? _workId != null
-                                          ? _nextStep
-                                          : null
-                                      : _currentStep == 3
-                                      ? _userId != null
-                                          ? _nextStep
-                                          : null
-                                      : null, // Manual next for non-scanner steps if any
-                              child: const Text('Continue'),
-                            ),
-                          ]
-                          : // Last step (Summary)
-                          [
-                            Text(""),
-                            ElevatedButton(
-                              // Enable finalize only if both IDs are scanned
-                              onPressed:
-                                  (_workId != null && _userId != null)
-                                      ? _nextStep
-                                      : null,
-                              child: const Text('Finalize'),
-                            ),
-                          ],
-                ),
-              ],
+            body: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  Expanded(child: _buildStepContent(_currentStep)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children:
+                        _currentStep != 4
+                            ? [
+                              TextButton(
+                                onPressed: _openSearch,
+                                child: const Text("Search"),
+                              ),
+                              TextButton(
+                                onPressed:
+                                    _currentStep == 1
+                                        ? _workId != null
+                                            ? _nextStep
+                                            : null
+                                        : _currentStep == 3
+                                        ? _userId != null
+                                            ? _nextStep
+                                            : null
+                                        : null, // Manual next for non-scanner steps if any
+                                child: const Text('Continue'),
+                              ),
+                            ]
+                            : // Last step (Summary)
+                            [
+                              Text(""),
+                              TextButton(
+                                // Enable finalize only if both IDs are scanned
+                                onPressed:
+                                    (_workId != null && _userId != null)
+                                        ? _nextStep
+                                        : null,
+                                child: const Text('Finalize'),
+                              ),
+                            ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

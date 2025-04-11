@@ -1,5 +1,6 @@
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'scanner_modal.dart';
@@ -25,45 +26,25 @@ class MyApp extends StatelessWidget {
     // Wrap MaterialApp with a DynamicColorBuilder.
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        ColorScheme lightColorScheme;
-        ColorScheme darkColorScheme;
-
-        if (lightDynamic != null && darkDynamic != null) {
-          // On Android S+ devices, use the provided dynamic color scheme.
-          // (Recommended) Harmonize the dynamic color scheme' built-in semantic colors.
-          lightColorScheme = lightDynamic.harmonized();
-          // (Optional) Customize the scheme as desired. For example, one might
-          // want to use a brand color to override the dynamic [ColorScheme.secondary].
-          lightColorScheme = lightColorScheme.copyWith(secondary: _brandBlue);
-          // (Optional) If applicable, harmonize custom colors.
-          lightCustomColors = lightCustomColors.harmonized(lightColorScheme);
-
-          // Repeat for the dark color scheme.
-          darkColorScheme = darkDynamic.harmonized();
-          darkColorScheme = darkColorScheme.copyWith(secondary: _brandBlue);
-          darkCustomColors = darkCustomColors.harmonized(darkColorScheme);
-        } else {
-          // Otherwise, use fallback schemes.
-          lightColorScheme = ColorScheme.fromSeed(seedColor: _brandBlue);
-          darkColorScheme = ColorScheme.fromSeed(
-            seedColor: _brandBlue,
-            brightness: Brightness.dark,
-          );
-        }
+        final baseLightTheme = ThemeData(
+          useMaterial3: true,
+          colorScheme: lightDynamic,
+          brightness: Brightness.light,
+        );
+        final baseDarkTheme = ThemeData(
+          useMaterial3: true,
+          colorScheme: darkDynamic,
+          brightness: Brightness.dark,
+        );
 
         return MaterialApp(
-          theme: ThemeData(
-            colorScheme: lightColorScheme,
-            extensions: [lightCustomColors],
-            textTheme: GoogleFonts.acmeTextTheme(Theme.of(context).textTheme),
+          theme: baseLightTheme.copyWith(
+            textTheme: GoogleFonts.interTextTheme(baseLightTheme.textTheme),
           ),
-          darkTheme: ThemeData(
-            colorScheme: darkColorScheme,
-            extensions: [darkCustomColors],
-            textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
+          darkTheme: baseDarkTheme.copyWith(
+            textTheme: GoogleFonts.interTextTheme(baseDarkTheme.textTheme),
           ),
           home: const MyHomePage(title: 'Stavanger Symfonikor'),
-
           debugShowCheckedModeBanner: false,
         );
       },
@@ -82,8 +63,13 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   void _openScanner() {
+    HapticFeedback.lightImpact();
     // Show the multi-step modal
     showModalBottomSheet(
+      showDragHandle: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
+      ),
       context: context,
       isScrollControlled: true, // Allows the modal to take up more height
       builder: (context) => const MultiStepModal(),

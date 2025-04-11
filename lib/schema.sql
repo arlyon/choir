@@ -47,3 +47,23 @@ JOIN
     users u ON c.user_id = u.user_id
 WHERE
     c.return_timestamp IS NULL; -- Only show items not yet returned
+
+CREATE VIEW completed_checkouts AS
+SELECT
+    c.checkout_id,
+    c.checkout_timestamp,
+    c.return_timestamp,
+    w.work_id,
+    w.title as work_title,
+    w.composer,
+    u.user_id,
+    u.name as user_name,
+    u.email as user_email
+FROM
+    checkouts c
+JOIN
+    works w ON c.work_id = w.work_id
+JOIN
+    users u ON c.user_id = u.user_id
+WHERE
+    c.return_timestamp IS NOT NULL;
