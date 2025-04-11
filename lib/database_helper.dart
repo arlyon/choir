@@ -26,13 +26,9 @@ class DatabaseHelper {
         LibsqlClient(path)
           ..authToken = authToken
           ..syncUrl = syncUrl
-          ..syncIntervalSeconds =
-              5 // Or your desired sync interval
           ..readYourWrites = true;
 
     await client.connect();
-    // You might want to run schema creation here if the DB is new
-    // await _ensureSchema(client);
     return client;
   }
 
@@ -73,9 +69,7 @@ class DatabaseHelper {
     final id = await db.execute(
       'insert into checkouts (work_id, user_id, checkout_timestamp, return_timestamp) values ("$workId", $userId, "$now", null)',
     );
-    print(
-      "Inserted checkout record with ID: $id for Work: $workId, User: $userId",
-    );
+
     return (true, id);
   }
 
@@ -92,11 +86,10 @@ class DatabaseHelper {
       if (results.isNotEmpty) {
         return results.first;
       } else {
-        return null; // Not found
+        return null;
       }
     } catch (e) {
-      print('Error fetching work by ID $workId: $e');
-      return null; // Error occurred
+      return null;
     }
   }
 
@@ -105,8 +98,7 @@ class DatabaseHelper {
     final db = await instance.database;
     final int? userId = int.tryParse(userIdString);
     if (userId == null) {
-      print('Error: Invalid user ID format "$userIdString"');
-      return null; // Invalid ID format
+      return null;
     }
 
     try {
@@ -119,11 +111,10 @@ class DatabaseHelper {
       if (results.isNotEmpty) {
         return results.first;
       } else {
-        return null; // Not found
+        return null;
       }
     } catch (e) {
-      print('Error fetching user by ID $userId: $e');
-      return null; // Error occurred
+      return null;
     }
   }
 
@@ -132,8 +123,7 @@ class DatabaseHelper {
     final db = await instance.database;
     final int? userId = int.tryParse(userIdString);
     if (userId == null) {
-      print('Error checking existing checkout: Invalid user ID format "$userIdString"');
-      return false; // Or throw an error, depending on desired handling
+      return false;
     }
 
     try {
@@ -143,14 +133,11 @@ class DatabaseHelper {
       final List<Map<String, dynamic>> results = await query.query(
         positional: [workId, userId],
       );
-      return results.isNotEmpty; // True if an active checkout exists
+      return results.isNotEmpty;
     } catch (e) {
-      print('Error checking existing checkout for work $workId, user $userId: $e');
-      return false; // Assume no checkout on error, or rethrow
+      return false;
     }
   }
-
-  // Add other methods here later if needed (e.g., fetchCheckouts, returnItem)
 
   Future dispose() async {
     final db = await instance.database;

@@ -1,10 +1,11 @@
 [tools]
 flutter = "latest"
-android-sdk = "13"
+android-sdk = "latest"
 "ubi:tursodatabase/turso-cli" = { version = "1.0.6", exe = "turso"}
 java = "23"
 rust = "latest"
 cocoapods = "latest"
+yq = "latest"
 
 [env]
 TURSO_DATABASE_URL="libsql://fancy-terry-arlyon.aws-eu-west-1.turso.io"

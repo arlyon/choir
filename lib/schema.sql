@@ -17,16 +17,19 @@ CREATE TABLE checkouts (
     checkout_id INTEGER PRIMARY KEY AUTOINCREMENT,
     work_id TEXT NOT NULL,
     user_id INTEGER NOT NULL,
+    instance INTEGER UNIQUE,
     checkout_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     return_timestamp DATETIME, -- NULL indicates currently checked out
-    FOREIGN KEY (work_id) REFERENCES works(work_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (work_id) REFERENCES works (work_id),
+    FOREIGN KEY (user_id) REFERENCES users (user_id)
 );
 
 -- Index for faster lookups of currently checked out items
-CREATE INDEX idx_current_checkouts ON checkouts(work_id) WHERE return_timestamp IS NULL;
-CREATE INDEX idx_user_checkouts ON checkouts(user_id, return_timestamp);
+CREATE INDEX idx_current_checkouts ON checkouts (work_id)
+WHERE
+    return_timestamp IS NULL;
 
+CREATE INDEX idx_user_checkouts ON checkouts (user_id, return_timestamp);
 
 -- View to easily see currently checked out works and who has them
 CREATE VIEW checked_out_works AS
@@ -41,13 +44,12 @@ SELECT
     u.email AS user_email
 FROM
     checkouts c
-JOIN
-    works w ON c.work_id = w.work_id
-JOIN
-    users u ON c.user_id = u.user_id
+    JOIN works w ON c.work_id = w.work_id
+    JOIN users u ON c.user_id = u.user_id
 WHERE
-    c.return_timestamp IS NULL; -- Only show items not yet returned
+    c.return_timestamp IS NULL;
 
+-- Only show items not yet returned
 CREATE VIEW completed_checkouts AS
 SELECT
     c.checkout_id,
@@ -61,9 +63,7 @@ SELECT
     u.email as user_email
 FROM
     checkouts c
-JOIN
-    works w ON c.work_id = w.work_id
-JOIN
-    users u ON c.user_id = u.user_id
+    JOIN works w ON c.work_id = w.work_id
+    JOIN users u ON c.user_id = u.user_id
 WHERE
     c.return_timestamp IS NOT NULL;

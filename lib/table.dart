@@ -4,41 +4,33 @@ import 'dart:async';
 import 'package:libsql_dart/libsql_dart.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'main.dart'; // Import WriteModel
+import 'main.dart';
 
 class CheckedOutList extends StatefulWidget {
-  final WriteModel writeModel; // Add this line
+  final WriteModel writeModel;
 
-  const CheckedOutList({
-    super.key,
-    required this.writeModel,
-  }); // Modify constructor
+  const CheckedOutList({super.key, required this.writeModel});
 
   @override
   State<CheckedOutList> createState() => _CheckedOutListState();
 }
 
 class _CheckedOutListState extends State<CheckedOutList> {
-  // Access the model via widget.writeModel
   LibsqlClient? _client;
   Timer? _syncTimer;
-  bool _isLoading = true;
   String? _error;
   List<Map<String, dynamic>> _currentItems = [];
   List<Map<String, dynamic>> _archiveItems = [];
-  bool _showArchive = false; // State for archive visibility
 
   @override
   void initState() {
     super.initState();
-    _initializeAndFetchData();
+    _refreshData(true);
 
-    // refresh from the cloud every 60s
     _syncTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
       _refreshData(true);
     });
 
-    // reload data if we have written
     widget.writeModel.addListener(() {
       _refreshData(false);
     });
@@ -46,8 +38,8 @@ class _CheckedOutListState extends State<CheckedOutList> {
 
   @override
   void dispose() {
-    _syncTimer?.cancel(); // Cancel the timer
-    _client?.dispose(); // Dispose the client connection
+    _syncTimer?.cancel();
+    _client?.dispose();
     super.dispose();
   }
 
@@ -55,8 +47,6 @@ class _CheckedOutListState extends State<CheckedOutList> {
     final dir = await getApplicationCacheDirectory();
     final path = '${dir.path}/local.db';
 
-    // --- IMPORTANT ---
-    // Replace with your actual Turso/LibSQL URL and Auth Token
     const syncUrl = String.fromEnvironment("TURSO_DATABASE_URL");
     const authToken = String.fromEnvironment("TURSO_AUTH_TOKEN");
 
@@ -69,20 +59,9 @@ class _CheckedOutListState extends State<CheckedOutList> {
           ..readYourWrites = true;
 
     await client.connect();
-    // You might want to run schema creation here if the DB is new
-    // await _ensureSchema(client);
     return client;
   }
 
-  // Example function to ensure schema exists (call from _initializeDb if needed)
-  // Future<void> _ensureSchema(LibsqlClient client) async {
-  //   // Read schema.sql and execute it
-  //   // final schemaSql = await rootBundle.loadString('lib/schema.sql');
-  //   // await client.executeMultiple(schemaSql);
-  //   print("Schema checked/applied.");
-  // }
-
-  // Fetches both current and archived items
   Future<Map<String, List<Map<String, dynamic>>>> _fetchData(
     LibsqlClient client,
     bool sync,
@@ -91,12 +70,10 @@ class _CheckedOutListState extends State<CheckedOutList> {
       await client.sync();
     }
 
-    // Fetch current items (return_timestamp is NULL)
     final currentResults = await client.query(
       'SELECT work_title, user_name, checkout_timestamp FROM checked_out_works ORDER BY checkout_timestamp DESC',
     );
 
-    // Fetch archive items (return_timestamp is NOT NULL)
     final archiveResults = await client.query(
       'SELECT work_title, user_name, checkout_timestamp, return_timestamp FROM completed_checkouts ORDER BY return_timestamp DESC',
     );
@@ -104,60 +81,23 @@ class _CheckedOutListState extends State<CheckedOutList> {
     return {'current': currentResults, 'archive': archiveResults};
   }
 
-  Future<void> _initializeAndFetchData() async {
-    if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      // Initialize DB only if not already initialized
-      _client ??= await _initializeDb();
-
-      final data = await _fetchData(_client!, true);
-      if (mounted) {
-        setState(() {
-          _currentItems = data['current']!;
-          _archiveItems = data['archive']!;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        print("Error initializing/fetching data: $e");
-        setState(() {
-          _error = "Failed to load data: $e";
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  // Method to refresh data, called by timer or pull-to-refresh
   Future<void> _refreshData(bool sync) async {
-    if (_client == null || !mounted) return;
-
-    // Optionally show a loading indicator during refresh, though
-    // RefreshIndicator handles this visually.
-    // setState(() => _isLoading = true); // Uncomment if you want explicit loading state
+    if (!mounted) return;
 
     try {
+      _client ??= await _initializeDb();
       final data = await _fetchData(_client!, sync);
       if (mounted) {
         setState(() {
           _currentItems = data['current']!;
           _archiveItems = data['archive']!;
-          _error = null; // Clear previous errors on successful refresh
-          // _isLoading = false; // Uncomment if using explicit loading state
+          _error = null;
         });
       }
     } catch (e) {
       if (mounted) {
-        print("Error refreshing data: $e");
         setState(() {
           _error = "Failed to refresh data: $e";
-          // _isLoading = false; // Uncomment if using explicit loading state
         });
       }
     }
@@ -169,20 +109,12 @@ class _CheckedOutListState extends State<CheckedOutList> {
       onRefresh: () async {
         await _refreshData(true);
       },
-      child: _buildContent(), // Delegate content building
+      child: _buildContent(),
     );
   }
 
-  // Helper method to build the main content area
   Widget _buildContent() {
-    // Loading State
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    // Error State
     if (_error != null) {
-      // Make error message scrollable for RefreshIndicator
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
@@ -199,7 +131,6 @@ class _CheckedOutListState extends State<CheckedOutList> {
       );
     }
 
-    // Empty State (Both lists are empty)
     if (_currentItems.isEmpty && _archiveItems.isEmpty) {
       return LayoutBuilder(
         // Use LayoutBuilder to get constraints
@@ -219,8 +150,6 @@ class _CheckedOutListState extends State<CheckedOutList> {
       );
     }
 
-    // Success State (Data available)
-    // Use CustomScrollView for combining different list types + ExpansionTile
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
@@ -257,19 +186,12 @@ class _CheckedOutListState extends State<CheckedOutList> {
             ),
           ),
 
-        // Archive Section (ExpansionTile wrapped in SliverToBoxAdapter)
         SliverToBoxAdapter(
           child: ExpansionTile(
             title: const Text(
               'Archive',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            initiallyExpanded:
-                _showArchive, // Controlled state not strictly needed here
-            onExpansionChanged: (isExpanded) {
-              // Optional: If you needed to persist the expanded state across refreshes
-              // setState(() => _showArchive = isExpanded);
-            },
             children: [
               if (_archiveItems.isNotEmpty)
                 ListView.builder(
