@@ -4,14 +4,22 @@ import 'dart:async';
 import 'package:libsql_dart/libsql_dart.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'main.dart'; // Import WriteModel
+
 class CheckedOutList extends StatefulWidget {
-  const CheckedOutList({super.key});
+  final WriteModel writeModel; // Add this line
+
+  const CheckedOutList({
+    super.key,
+    required this.writeModel,
+  }); // Modify constructor
 
   @override
   State<CheckedOutList> createState() => _CheckedOutListState();
 }
 
 class _CheckedOutListState extends State<CheckedOutList> {
+  // Access the model via widget.writeModel
   LibsqlClient? _client;
   Timer? _syncTimer;
   bool _isLoading = true;
@@ -24,10 +32,15 @@ class _CheckedOutListState extends State<CheckedOutList> {
   void initState() {
     super.initState();
     _initializeAndFetchData();
-    // Optional: Set up a timer to refresh the list periodically
-    // Adjust the duration based on your sync interval and needs
-    _syncTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      _refreshData();
+
+    // refresh from the cloud every 60s
+    _syncTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
+      _refreshData(true);
+    });
+
+    // reload data if we have written
+    widget.writeModel.addListener(() {
+      _refreshData(false);
     });
   }
 
@@ -72,8 +85,11 @@ class _CheckedOutListState extends State<CheckedOutList> {
   // Fetches both current and archived items
   Future<Map<String, List<Map<String, dynamic>>>> _fetchData(
     LibsqlClient client,
+    bool sync,
   ) async {
-    await client.sync();
+    if (sync) {
+      await client.sync();
+    }
 
     // Fetch current items (return_timestamp is NULL)
     final currentResults = await client.query(
@@ -99,7 +115,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
       // Initialize DB only if not already initialized
       _client ??= await _initializeDb();
 
-      final data = await _fetchData(_client!);
+      final data = await _fetchData(_client!, true);
       if (mounted) {
         setState(() {
           _currentItems = data['current']!;
@@ -119,7 +135,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
   }
 
   // Method to refresh data, called by timer or pull-to-refresh
-  Future<void> _refreshData() async {
+  Future<void> _refreshData(bool sync) async {
     if (_client == null || !mounted) return;
 
     // Optionally show a loading indicator during refresh, though
@@ -127,7 +143,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
     // setState(() => _isLoading = true); // Uncomment if you want explicit loading state
 
     try {
-      final data = await _fetchData(_client!);
+      final data = await _fetchData(_client!, sync);
       if (mounted) {
         setState(() {
           _currentItems = data['current']!;
@@ -150,7 +166,9 @@ class _CheckedOutListState extends State<CheckedOutList> {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: _refreshData,
+      onRefresh: () async {
+        await _refreshData(true);
+      },
       child: _buildContent(), // Delegate content building
     );
   }
@@ -204,17 +222,8 @@ class _CheckedOutListState extends State<CheckedOutList> {
     // Success State (Data available)
     // Use CustomScrollView for combining different list types + ExpansionTile
     return CustomScrollView(
-      physics:
-          const AlwaysScrollableScrollPhysics(), // Ensure scrollability for RefreshIndicator
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        // Header for Current Items
-        // SliverToBoxAdapter(
-        //   child: Padding(
-        //     padding: EdgeInsets.all(16.0),
-        //     child: Text('Currently Checked Out', style: Theme.of(context).textTheme.bodySmall),
-        //   ),
-        // ),
-
         // List of Current Items
         if (_currentItems.isNotEmpty)
           SliverList(
@@ -262,17 +271,6 @@ class _CheckedOutListState extends State<CheckedOutList> {
               // setState(() => _showArchive = isExpanded);
             },
             children: [
-              // Content inside the archive
-              OutlinedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('A SnackBar has been shown.'),
-                    ),
-                  );
-                },
-                child: const Text('Show SnackBar'),
-              ),
               if (_archiveItems.isNotEmpty)
                 ListView.builder(
                   // Use ListView.builder inside ExpansionTile

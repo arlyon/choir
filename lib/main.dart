@@ -11,6 +11,16 @@ void main() {
   runApp(const MyApp());
 }
 
+class WriteModel with ChangeNotifier {
+  int _count = 0;
+  int get count => _count;
+
+  void increment() {
+    _count += 1;
+    notifyListeners();
+  }
+}
+
 // Fictitious brand color.
 const _brandBlue = Color.fromARGB(255, 67, 123, 255);
 
@@ -61,7 +71,17 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+
+
 class _MyHomePageState extends State<MyHomePage> {
+  late WriteModel _writeModel; // Renamed for clarity
+
+  @override
+  void initState() {
+    super.initState();
+    _writeModel = WriteModel(); // Initialize here
+  }
+
   void _openScanner() {
     HapticFeedback.lightImpact();
     // Show the multi-step modal
@@ -72,18 +92,20 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       context: context,
       isScrollControlled: true, // Allows the modal to take up more height
-      builder: (context) => const MultiStepModal(),
+      builder: (context) => MultiStepModal(onSuccess: _writeModel.increment), // Use the state variable
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    // _writeModel is now initialized in initState
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: const CheckedOutList(),
+      body: CheckedOutList(writeModel: _writeModel), // Pass the model instance
       floatingActionButton: FloatingActionButton(
         onPressed: _openScanner,
         tooltip: 'Increment',

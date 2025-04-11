@@ -79,6 +79,77 @@ class DatabaseHelper {
     return (true, id);
   }
 
+  // Fetch a single work by its ID
+  Future<Map<String, dynamic>?> getWorkById(String workId) async {
+    final db = await instance.database;
+    try {
+      final query = await db.prepare(
+        'SELECT work_id, title, composer FROM works WHERE work_id = ?',
+      );
+      final List<Map<String, dynamic>> results = await query.query(
+        positional: [workId],
+      );
+      if (results.isNotEmpty) {
+        return results.first;
+      } else {
+        return null; // Not found
+      }
+    } catch (e) {
+      print('Error fetching work by ID $workId: $e');
+      return null; // Error occurred
+    }
+  }
+
+  // Fetch a single user by their ID
+  Future<Map<String, dynamic>?> getUserById(String userIdString) async {
+    final db = await instance.database;
+    final int? userId = int.tryParse(userIdString);
+    if (userId == null) {
+      print('Error: Invalid user ID format "$userIdString"');
+      return null; // Invalid ID format
+    }
+
+    try {
+      final query = await db.prepare(
+        'SELECT user_id, name FROM users WHERE user_id = ?',
+      );
+      final List<Map<String, dynamic>> results = await query.query(
+        positional: [userId],
+      );
+      if (results.isNotEmpty) {
+        return results.first;
+      } else {
+        return null; // Not found
+      }
+    } catch (e) {
+      print('Error fetching user by ID $userId: $e');
+      return null; // Error occurred
+    }
+  }
+
+  // Check if an active (non-returned) checkout exists for a given work and user
+  Future<bool> checkExistingCheckout(String workId, String userIdString) async {
+    final db = await instance.database;
+    final int? userId = int.tryParse(userIdString);
+    if (userId == null) {
+      print('Error checking existing checkout: Invalid user ID format "$userIdString"');
+      return false; // Or throw an error, depending on desired handling
+    }
+
+    try {
+      final query = await db.prepare(
+        'SELECT checkout_id FROM checkouts WHERE work_id = ? AND user_id = ? AND return_timestamp IS NULL',
+      );
+      final List<Map<String, dynamic>> results = await query.query(
+        positional: [workId, userId],
+      );
+      return results.isNotEmpty; // True if an active checkout exists
+    } catch (e) {
+      print('Error checking existing checkout for work $workId, user $userId: $e');
+      return false; // Assume no checkout on error, or rethrow
+    }
+  }
+
   // Add other methods here later if needed (e.g., fetchCheckouts, returnItem)
 
   Future dispose() async {
