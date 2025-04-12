@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:libsql_dart/libsql_dart.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
+// import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class OnlineModel with ChangeNotifier {
   bool _isOnline = false;
@@ -59,37 +60,44 @@ class DatabaseHelper {
 
   BuildContext? _context;
 
-  Future<void> initialize() async {
+  // init completes when the app is either online or offline
+  // for the first time
+  Future<void> initialize(bool? online) async {
     if (_initCompleter.isCompleted || _isConnecting) {
       return _initCompleter.future;
     }
-    _isConnecting = true;
 
-    sqfliteFfiInit(); // Uncomment if running on desktop/web
+    // sqfliteFfiInit(); // Uncomment if running on desktop/web
 
-    await _initializeOfflineDb(); // init offline schema
-    await _tryGoOnline(); // go online
+    print("Initializing offline database...");
+    await _initializeOfflineDb(true); // init offline schema
+
+    if (online == true || online == null) {
+      print("Going online");
+      await tryGoOnline(true); // go online
+    } else {
+      print("Going offline");
+      await goOffline();
+    }
 
     // Start connectivity listener
     Connectivity().onConnectivityChanged.listen(_handleConnectivityChange);
 
-    _isConnecting = false;
-    if (!_initCompleter.isCompleted) {
-      _initCompleter.complete();
-    }
     return _initCompleter.future;
   }
 
-  Future<void> _initializeOfflineDb() async {
+  Future<void> _initializeOfflineDb(bool applySchema) async {
     try {
       final dir = await getApplicationCacheDirectory();
       final path = '${dir.path}/local.db';
       _offlineClient = await databaseFactory.openDatabase(path);
       print("Offline database initialized at $path");
 
-      // --- Ensure Schema Exists (Crucial for Offline First) ---
-      await _executeSchema(_offlineClient);
-      print("Offline database schema loaded from lib/schema.sql.");
+      if (applySchema) {
+        // --- Ensure Schema Exists (Crucial for Offline First) ---
+        await _executeSchema(_offlineClient);
+        print("Offline database schema loaded from lib/schema.sql.");
+      }
     } catch (e) {
       print("Error initializing offline database: $e");
       // Handle error appropriately, maybe prevent app from starting
@@ -123,11 +131,13 @@ class DatabaseHelper {
   }
 
   // Returns true if online, false if offline
-  Future<bool> _tryGoOnline() async {
+  Future<bool> tryGoOnline(bool doSync) async {
     if (_syncUrl.isEmpty) {
       print("Online connection skipped: TURSO_DATABASE_URL not set.");
-      return await _goOffline();
+      return await goOffline();
     }
+
+    _isConnecting = true;
 
     print("Attempting online connection...");
     try {
@@ -151,22 +161,37 @@ class DatabaseHelper {
       print("Online connection successful!");
       onlineModel.online(_context);
       _stopRetryTimer();
-      await sync();
+
+      if (!_initCompleter.isCompleted) {
+        _initCompleter.complete();
+      }
+
+      if (doSync) {
+        await sync();
+      }
+
       return true;
     } catch (e) {
       print("Online connection failed: $e");
-      return await _goOffline();
+      return await goOffline();
+    } finally {
+      _isConnecting = false;
     }
   }
 
   // Returns true if online, false if offline
-  Future<bool> _goOffline() async {
+  Future<bool> goOffline() async {
     if (_onlineClient != null) {
       await _onlineClient?.dispose();
       _onlineClient = null;
     }
     onlineModel.offline(_context);
     _startRetryTimer();
+
+    if (!_initCompleter.isCompleted) {
+      _initCompleter.complete();
+    }
+
     return false;
   }
 
@@ -178,9 +203,9 @@ class DatabaseHelper {
 
     if (hasConnection && !onlineModel.isOnline) {
       print("Network available, attempting online connection...");
-      await _tryGoOnline();
+      await tryGoOnline(true);
     } else if (!hasConnection && onlineModel.isOnline) {
-      await _goOffline();
+      await goOffline();
     }
   }
 
@@ -198,7 +223,7 @@ class DatabaseHelper {
       }
 
       print("Retry timer: Attempting online connection...");
-      await _tryGoOnline();
+      await tryGoOnline(true);
     });
   }
 
@@ -215,17 +240,19 @@ class DatabaseHelper {
   Future<void> sync() async {
     await _initCompleter.future; // Ensure initialization is complete
     if (onlineModel.isOnline && _onlineClient != null) {
+      if (_offlineClient != null) {
+        _offlineClient!.close();
+        _offlineClient = null;
+      }
+
       print("Attempting manual sync...");
       try {
         await _onlineClient!.sync();
+        await _initializeOfflineDb(false); // re-init offline schema
         print("Manual sync completed.");
       } catch (e) {
         print("Manual sync failed: $e");
-        // Consider switching to offline mode on sync failure
-        onlineModel.offline(_context);
-        await _onlineClient?.dispose();
-        _onlineClient = null;
-        _startRetryTimer();
+        await goOffline();
       }
     } else {
       print("Sync skipped: Not online or online client not available.");
