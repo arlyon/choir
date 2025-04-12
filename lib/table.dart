@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-import 'package:libsql_dart/libsql_dart.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/material.dart'; // Keep material import
 
-import 'main.dart';
+import 'database_helper.dart'; // Import the database helper
+import 'main.dart'; // Keep main import for WriteModel
 
 class CheckedOutList extends StatefulWidget {
   final WriteModel writeModel;
@@ -16,19 +16,19 @@ class CheckedOutList extends StatefulWidget {
 }
 
 class _CheckedOutListState extends State<CheckedOutList> {
-  LibsqlClient? _client;
-  Timer? _syncTimer;
+  // Remove direct client and sync timer
+  // LibsqlClient? _client;
+  // Timer? _syncTimer;
   String? _error;
+  bool _isLoading = true; // Add loading state
   List<Map<String, dynamic>> _currentItems = [];
   List<Map<String, dynamic>> _archiveItems = [];
 
   @override
   void initState() {
     super.initState();
-    _refreshData(true);
-
-    _syncTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
-      _refreshData(true);
+    DatabaseHelper.instance.initialize().then((_) {
+      _refreshData(true); // Initial data load with sync attempt
     });
 
     widget.writeModel.addListener(() {
@@ -38,66 +38,53 @@ class _CheckedOutListState extends State<CheckedOutList> {
 
   @override
   void dispose() {
-    _syncTimer?.cancel();
-    _client?.dispose();
+    // Remove timer cancellation and client disposal
+    // _syncTimer?.cancel();
+    // _client?.dispose();
     super.dispose();
   }
 
-  Future<LibsqlClient> _initializeDb() async {
-    final dir = await getApplicationCacheDirectory();
-    final path = '${dir.path}/local.db';
-
-    const syncUrl = String.fromEnvironment("TURSO_DATABASE_URL");
-    const authToken = String.fromEnvironment("TURSO_AUTH_TOKEN");
-
-    final client =
-        LibsqlClient(path)
-          ..authToken = authToken
-          ..syncUrl = syncUrl
-          ..syncIntervalSeconds =
-              5 // Or your desired sync interval
-          ..readYourWrites = true;
-
-    await client.connect();
-    return client;
-  }
-
-  Future<Map<String, List<Map<String, dynamic>>>> _fetchData(
-    LibsqlClient client,
-    bool sync,
-  ) async {
-    if (sync) {
-      await client.sync();
-    }
-
-    final currentResults = await client.query(
-      'SELECT work_title, user_name, checkout_timestamp FROM checked_out_works ORDER BY checkout_timestamp DESC',
-    );
-
-    final archiveResults = await client.query(
-      'SELECT work_title, user_name, checkout_timestamp, return_timestamp FROM completed_checkouts ORDER BY return_timestamp DESC',
-    );
-
-    return {'current': currentResults, 'archive': archiveResults};
-  }
+  // Remove _initializeDb and _fetchData, use DatabaseHelper instead
 
   Future<void> _refreshData(bool sync) async {
     if (!mounted) return;
 
+    // Set loading state only if not already loading (prevents flicker on rapid calls)
+    if (!_isLoading) {
+      setState(() {
+        _isLoading = true;
+        _error = null; // Clear previous error on refresh attempt
+      });
+    }
+
     try {
-      _client ??= await _initializeDb();
-      final data = await _fetchData(_client!, sync);
+      // Ensure DatabaseHelper is initialized (redundant if called in initState/main)
+      await DatabaseHelper.instance.initialize();
+
+      if (sync) {
+        // Trigger a sync attempt if requested (e.g., on pull-to-refresh)
+        await DatabaseHelper.instance.sync();
+      }
+
+      // Fetch data using DatabaseHelper methods
+      final currentData = await DatabaseHelper.instance.fetchCurrentItems();
+      final archiveData = await DatabaseHelper.instance.fetchArchiveItems();
+
       if (mounted) {
         setState(() {
-          _currentItems = data['current']!;
-          _archiveItems = data['archive']!;
+          _currentItems = currentData;
+          _archiveItems = archiveData;
           _error = null;
+          _isLoading = false; // Data loaded successfully
         });
       }
     } catch (e) {
+      print("Error refreshing data in CheckedOutList: $e");
       if (mounted) {
         setState(() {
-          _error = "Failed to refresh data: $e";
+          _error =
+              "Failed to refresh data. Check connection or logs."; // User-friendly error
+          _isLoading = false; // Stop loading on error
         });
       }
     }
@@ -114,16 +101,47 @@ class _CheckedOutListState extends State<CheckedOutList> {
   }
 
   Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     if (_error != null) {
+      // Keep error display but ensure it's scrollable within RefreshIndicator
       return ListView(
+        // Use ListView for scrollability
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.3,
+          ), // Add some top padding
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Center(
-              child: Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              child: Column(
+                // Use Column for text and maybe a retry button
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: Theme.of(context).colorScheme.error,
+                    size: 48,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.refresh),
+                    label: const Text("Retry"),
+                    onPressed: () => _refreshData(true), // Retry with sync
+                  ),
+                ],
               ),
             ),
           ),

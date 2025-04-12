@@ -1,3 +1,4 @@
+import 'package:choir/database_helper.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -71,8 +72,6 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-
-
 class _MyHomePageState extends State<MyHomePage> {
   late WriteModel _writeModel; // Renamed for clarity
 
@@ -91,26 +90,79 @@ class _MyHomePageState extends State<MyHomePage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(30.0)),
       ),
       context: context,
-      isScrollControlled: true, // Allows the modal to take up more height
-      builder: (context) => MultiStepModal(onSuccess: _writeModel.increment), // Use the state variable
+      isScrollControlled: true,
+      builder: (context) => MultiStepModal(onSuccess: _writeModel.increment),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // _writeModel is now initialized in initState
+    // DatabaseHelper.instance.setContext(context);
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+        actions: [
+          ListenableBuilder(
+            listenable: DatabaseHelper.instance.onlineModel,
+            builder: (BuildContext context, Widget? child) {
+              return AnimatedSwitcher(
+                duration: const Duration(
+                  milliseconds: 300,
+                ), // Consistent duration
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                child:
+                    !DatabaseHelper.instance.onlineModel.isOnline
+                        ? const Icon(
+                          Icons.wifi_off,
+                          key: ValueKey<String>('wifi_off_icon'),
+                        )
+                        : const SizedBox.shrink(
+                          key: ValueKey<String>('wifi_on_placeholder'),
+                        ),
+              );
+            },
+          ),
+        ],
+        actionsPadding: EdgeInsets.all(16.0),
       ),
-      body: CheckedOutList(writeModel: _writeModel), // Pass the model instance
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openScanner,
-        tooltip: 'Increment',
-        child: const Icon(Icons.qr_code),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      body: CheckedOutList(writeModel: _writeModel),
+      floatingActionButton: ListenableBuilder(
+        listenable: DatabaseHelper.instance.onlineModel,
+        builder: (BuildContext context, Widget? child) {
+          return AnimatedSwitcher(
+            duration: const Duration(
+              milliseconds: 300,
+            ), // Adjust duration as needed
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              // Define the slide tween from bottom (Offset(0, 1)) to center (Offset.zero)
+              final offsetAnimation = Tween<Offset>(
+                begin: const Offset(2.0, 0.0), // Start below the screen
+                end: Offset.zero, // End at the original position
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOut),
+              ); // Apply easing
+              return SlideTransition(position: offsetAnimation, child: child);
+            },
+            child:
+                DatabaseHelper.instance.onlineModel.isOnline
+                    ? FloatingActionButton(
+                      // Use a ValueKey to ensure AnimatedSwitcher recognizes the widget change
+                      key: const ValueKey<String>('fab_online'),
+                      onPressed: _openScanner,
+                      tooltip: 'Scan QR Code',
+                      child: const Icon(Icons.qr_code),
+                    )
+                    : const SizedBox.shrink(
+                      // Use a different ValueKey for the 'offline' state
+                      key: ValueKey<String>('fab_offline'),
+                    ), // Use SizedBox.shrink() to represent the absence of the FAB
+          );
+        },
+      ),
     );
   }
 }
