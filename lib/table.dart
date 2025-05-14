@@ -10,6 +10,7 @@ import 'package:barcode/barcode.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:convert';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'database_helper.dart';
 import 'main.dart';
@@ -375,12 +376,12 @@ class _CheckedOutListState extends State<CheckedOutList> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           TextButton(
-                            child: const Text('Cancel'),
+                            child: Text(AppLocalizations.of(context)!.cancel),
                             onPressed: () => Navigator.of(context).pop(),
                           ),
                           const SizedBox(width: 8),
                           ElevatedButton(
-                            child: const Text('Apply'),
+                            child: Text(AppLocalizations.of(context)!.apply),
                             onPressed: () {
                               setState(() {
                                 if (filterType == 'Person') {
@@ -417,7 +418,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
         child: ActionChip(
           shape: StadiumBorder(),
           avatar: const Icon(Icons.person_add_alt_1, size: 18),
-          label: const Text('Person'),
+          label: Text(AppLocalizations.of(context)!.person),
           onPressed:
               () => _showFilterDialog(
                 'Person',
@@ -433,7 +434,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
         child: ActionChip(
           shape: StadiumBorder(),
           avatar: const Icon(Icons.music_note, size: 18),
-          label: const Text('Work Title'),
+          label: Text(AppLocalizations.of(context)!.workTitle),
           onPressed:
               () => _showFilterDialog(
                 'Work Title',
@@ -448,7 +449,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: FilterChip(
-          label: const Text('Archived'),
+          label: Text(AppLocalizations.of(context)!.archived),
           showCheckmark: false,
           selected: _showArchive,
           onSelected: (bool selected) {
@@ -482,7 +483,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
             );
           },
           child: FilterChip(
-            label: const Text('Me'),
+            label: Text(AppLocalizations.of(context)!.me),
             showCheckmark: false,
             selected: _selectedPersons.isNotEmpty,
             onSelected: (bool selected) async {
@@ -626,8 +627,8 @@ class _CheckedOutListState extends State<CheckedOutList> {
               child: Center(
                 child: Text(
                   (_selectedPersons.isEmpty && _selectedWorkTitles.isEmpty)
-                      ? 'No items currently checked out.'
-                      : 'No items match the selected filters.',
+                      ? AppLocalizations.of(context)!.noItems
+                      : AppLocalizations.of(context)!.noFilterItems,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -640,7 +641,9 @@ class _CheckedOutListState extends State<CheckedOutList> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
               child: Text(
-                'Archived Items (${_archiveItems.length})',
+                AppLocalizations.of(
+                  context,
+                )!.archivedItems(_archiveItems.length),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -665,7 +668,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
                 ),
                 child: Center(
                   child: Text(
-                    'Archive is empty.',
+                    AppLocalizations.of(context)!.archiveEmpty,
                     style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                 ),

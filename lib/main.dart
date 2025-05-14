@@ -2,6 +2,8 @@ import 'package:choir/database_helper.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'scanner_modal.dart';
@@ -54,6 +56,16 @@ class MyApp extends StatelessWidget {
           theme: baseLightTheme,
           darkTheme: baseDarkTheme,
           home: const MyHomePage(title: 'Stavanger Symfonikor'),
+          localizationsDelegates: [
+            AppLocalizations.delegate, // Add this line
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: [
+            Locale('en'), // English
+            Locale('no'),
+          ],
           debugShowCheckedModeBanner: false,
         );
       },
@@ -95,9 +107,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // DatabaseHelper.instance.setContext(context);
-
-    return Scaffold(
+    var child = Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
@@ -161,6 +171,14 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         },
       ),
+    );
+
+    // return child;
+
+    return Localizations.override(
+      context: context,
+      locale: const Locale('no'),
+      child: child,
     );
   }
 }

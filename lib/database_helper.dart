@@ -9,7 +9,7 @@ import 'package:libsql_dart/libsql_dart.dart';
 import 'package:mutex/mutex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-// import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 part 'database_helper.freezed.dart';
 
@@ -21,7 +21,7 @@ class OnlineModel with ChangeNotifier {
     if (!_isOnline && context != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Reconnected to network.'),
+          content: Text(AppLocalizations.of(context)!.reconnected),
           backgroundColor: Colors.green,
         ),
       );
@@ -34,7 +34,7 @@ class OnlineModel with ChangeNotifier {
     if (_isOnline && context != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Disconnected from network.'),
+          content: Text(AppLocalizations.of(context)!.disconnected),
           backgroundColor: Theme.of(context).colorScheme.error,
           showCloseIcon: true,
         ),

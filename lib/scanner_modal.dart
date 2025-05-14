@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'database_helper.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // New Widget for the Multi-Step Modal
 class MultiStepModal extends StatefulWidget {
@@ -107,8 +108,8 @@ class _MultiStepModalState extends State<MultiStepModal> {
             children: [
               Text(
                 stepIndex == 0
-                    ? 'Scan the QR code on the music booklet.'
-                    : 'Scan the QR code for the person.',
+                    ? AppLocalizations.of(context)!.scanMusic
+                    : AppLocalizations.of(context)!.scanPerson,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.labelMedium!.copyWith(
                   color: theme.disabledColor,
@@ -134,7 +135,10 @@ class _MultiStepModalState extends State<MultiStepModal> {
           [
             SizedBox.shrink(),
             // TextButton(onPressed: _openSearch, child: const Text("Search")),
-            TextButton(onPressed: null, child: const Text('Continue')),
+            TextButton(
+              onPressed: null,
+              child: Text(AppLocalizations.of(context)!.continueText),
+            ),
           ],
         );
       case 1:
@@ -250,7 +254,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                 print("render");
                 return TextButton(
                   onPressed: value,
-                  child: const Text('Continue'),
+                  child: Text(AppLocalizations.of(context)!.continueText),
                 );
               },
             ),
@@ -330,7 +334,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '(ID: 123)',
+                          '(ID: ${userData["user_id"]})',
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.disabledColor,
                           ),
@@ -355,7 +359,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
               builder:
                   (context, value, child) => TextButton(
                     onPressed: value,
-                    child: const Text('Continue'),
+                    child: Text(AppLocalizations.of(context)!.continueText),
                   ),
             ),
           ],
@@ -367,7 +371,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Error: Missing Work ID or User ID. Please go back and scan both QR codes.',
+                  AppLocalizations.of(context)!.missingItems,
                   style: TextStyle(color: theme.colorScheme.error),
                   textAlign: TextAlign.center,
                 ),
@@ -404,7 +408,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Text(
-                      'Error loading summary details. Please try again.',
+                      AppLocalizations.of(context)!.errorLoadingSummary,
                       style: TextStyle(color: theme.colorScheme.error),
                       textAlign: TextAlign.center,
                     ),
@@ -502,7 +506,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
               // Enable finalize only if both IDs are scanned
               onPressed:
                   (_user != null && _work != null && true) ? _nextStep : null,
-              label: const Text('Finalize'),
+              label: Text(AppLocalizations.of(context)!.finalize),
               icon:
                   false
                       ? Container(
@@ -538,7 +542,9 @@ class _MultiStepModalState extends State<MultiStepModal> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              created ? 'Checkout successful!' : 'Return successful!',
+              created
+                  ? AppLocalizations.of(context)!.checkoutSuccess
+                  : AppLocalizations.of(context)!.returnSuccess,
             ),
             backgroundColor: Colors.green,
           ),
@@ -635,7 +641,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
               color: theme.colorScheme.primaryFixed,
             ),
             Text(
-              'Add a new work',
+              AppLocalizations.of(context)!.addWork,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurface,
@@ -658,8 +664,8 @@ class _MultiStepModalState extends State<MultiStepModal> {
             const SizedBox(height: 8),
             TextFormField(
               controller: composerController,
-              decoration: const InputDecoration(
-                labelText: 'Composer (optional)',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.composerOptional,
                 border: OutlineInputBorder(),
               ),
             ),
@@ -689,7 +695,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
               color: theme.colorScheme.primaryFixed,
             ),
             Text(
-              'Add a new user',
+              AppLocalizations.of(context)!.addPerson,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurface,
@@ -698,13 +704,13 @@ class _MultiStepModalState extends State<MultiStepModal> {
             const SizedBox(height: 16),
             TextFormField(
               controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.name,
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter a name';
+                  return AppLocalizations.of(context)!.pleaseEnterName;
                 }
                 return null;
               },
@@ -712,8 +718,8 @@ class _MultiStepModalState extends State<MultiStepModal> {
             const SizedBox(height: 8),
             TextFormField(
               controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email (optional)',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.emailOptional,
                 border: OutlineInputBorder(),
               ),
             ),

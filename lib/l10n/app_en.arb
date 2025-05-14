@@ -1,0 +1,77 @@
+{
+  "person": "Person",
+  "@person": {
+    "description": "The user"
+  },
+  "workTitle": "Work Title",
+  "@workTitle": {
+    "description": "The name of a work"
+  },
+  "archived": "Archived",
+  "@archived": {
+    "description": "The archived state of a work"
+  },
+  "me": "Me",
+  "@me": {
+    "description": "The user (first person)"
+  },
+  "noItems": "No items currently checked out.",
+  "@noItems": {
+    "description": "No items currently checked out."
+  },
+  "noFilterItems": "No items match the selected filters.",
+  "@noFilterItems": {
+    "description": "No items match the selected filters."
+  },
+  "scanMusic": "Scan the QR code on the music booklet.",
+  "@scanMusic": {
+    "description": "Scan the QR code on the music booklet."
+  },
+  "scanPerson": "Scan the QR code for the person.",
+  "@scanPerson": {
+    "description": "Scan the QR code for the person."
+  },
+  "addPerson": "Add a new person",
+  "@addPerson": {
+    "description": "Add a new person"
+  },
+  "addWork": "Add a new work",
+  "reconnected": "Reconnected to network.",
+  "@reconnected": {
+    "description": "Reconnected to network."
+  },
+  "disconnected": "Disconnected from network.",
+  "@disconnected": {
+    "description": "Disconnected from network."
+  },
+  "continueText": "Continue",
+  "missingItems": "Either the work or user ID is missing. Please go back and scan both QR codes.",
+  "errorLoadingSummary": "Error loading summary details. Please try again.",
+  "finalize": "Finalize",
+  "checkoutSuccess": "Checkout successful!",
+  "@checkoutSuccess": {
+    "description": "Checkout successful!"
+  },
+  "returnSuccess": "Return successful!",
+  "@returnSuccess": {
+    "description": "Return successful!"
+  },
+  "cancel": "Cancel",
+  "apply": "Apply",
+  "archivedItems": "Archived Items ({count})",
+  "@archivedItems": {
+    "description": "Archived Items ({count})",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "123"
+      }
+    }
+  },
+  "archiveEmpty": "Archive is empty.",
+  "scanUserBarcode": "Scan the QR code for the user.",
+  "emailOptional": "Email (optional)",
+  "composerOptional": "Composer (optional)",
+  "name": "Name",
+  "pleaseEnterName": "Please enter a name"
+}
