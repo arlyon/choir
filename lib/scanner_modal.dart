@@ -33,7 +33,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
   Future<Map<String, dynamic>?>? _workFuture;
   Future<bool>? _checkoutFuture;
 
-  VoidCallback? continueAction;
+  ValueNotifier<VoidCallback?> continueAction = ValueNotifier(null);
 
   final _formKeyWork = GlobalKey<FormState>();
   final _titleController = TextEditingController();
@@ -132,7 +132,8 @@ class _MultiStepModalState extends State<MultiStepModal> {
             ],
           ),
           [
-            TextButton(onPressed: _openSearch, child: const Text("Search")),
+            SizedBox.shrink(),
+            // TextButton(onPressed: _openSearch, child: const Text("Search")),
             TextButton(onPressed: null, child: const Text('Continue')),
           ],
         );
@@ -145,12 +146,16 @@ class _MultiStepModalState extends State<MultiStepModal> {
 
               if (snapshot.connectionState == ConnectionState.waiting) {
                 body = const Center(child: CircularProgressIndicator());
-                continueAction = null; // Disable continue while loading
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  continueAction.value = null; // Disable continue while loading
+                });
               } else if (snapshot.hasError) {
                 body = Center(
                   child: Text('Error fetching work details: ${snapshot.error}'),
                 );
-                continueAction = null; // Disable on error
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  continueAction.value = null; // Disable on error
+                });
               } else if (!snapshot.hasData || snapshot.data == null) {
                 _titleController.text = switch (_work) {
                   ExistingWork(:final id) => id.split(" ").first,
@@ -165,23 +170,25 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   _composerController,
                 );
                 // Action: Validate form, create work object, then advance
-                continueAction = () {
-                  if (_formKeyWork.currentState!.validate()) {
-                    setState(() {
-                      // Create the work object using positional args
-                      // Note: We are now storing the *intent* to create in _work
-                      // The actual DB insertion happens in _finalizeCheckout
-                      _work = NewOrExistingWork.create(
-                        _work!.id,
-                        _titleController.text,
-                        _composerController
-                            .text, // Pass empty string if null/empty
-                        null, // Instance is null for now
-                      );
-                    });
-                    _nextStep(); // Advance after successful validation and creation
-                  }
-                };
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  continueAction.value = () {
+                    if (_formKeyWork.currentState!.validate()) {
+                      setState(() {
+                        // Create the work object using positional args
+                        // Note: We are now storing the *intent* to create in _work
+                        // The actual DB insertion happens in _finalizeCheckout
+                        _work = NewOrExistingWork.create(
+                          _work!.id,
+                          _titleController.text,
+                          _composerController
+                              .text, // Pass empty string if null/empty
+                          null, // Instance is null for now
+                        );
+                      });
+                      _nextStep(); // Advance after successful validation and creation
+                    }
+                  };
+                });
               } else {
                 // Work exists, show details
                 final workData = snapshot.data!;
@@ -225,7 +232,9 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   ),
                 );
                 // Action: Just advance to the next step
-                continueAction = _nextStep;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  continueAction.value = _nextStep;
+                });
               }
 
               // Return the body and the correctly configured button action
@@ -235,9 +244,15 @@ class _MultiStepModalState extends State<MultiStepModal> {
           ),
           [
             SizedBox.shrink(), // Placeholder for potential back button?
-            TextButton(
-              onPressed: continueAction,
-              child: const Text('Continue'),
+            ValueListenableBuilder(
+              valueListenable: continueAction,
+              builder: (context, value, child) {
+                print("render");
+                return TextButton(
+                  onPressed: value,
+                  child: const Text('Continue'),
+                );
+              },
             ),
           ],
         );
@@ -250,12 +265,16 @@ class _MultiStepModalState extends State<MultiStepModal> {
 
               if (snapshot.connectionState == ConnectionState.waiting) {
                 body = const Center(child: CircularProgressIndicator());
-                continueAction = null; // Disable continue while loading
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  continueAction.value = null; // Disable continue while loading
+                });
               } else if (snapshot.hasError) {
                 body = Center(
                   child: Text('Error fetching work details: ${snapshot.error}'),
                 );
-                continueAction = null; // Disable on error
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  continueAction.value = null; // Disable on error
+                });
               } else if (!snapshot.hasData || snapshot.data == null) {
                 _nameController.text = switch (_user) {
                   ExistingUser(:final id) => id.split(" ").first,
@@ -269,22 +288,23 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   _nameController,
                   _emailController,
                 );
-                continueAction = () {
-                  print(_formKeyUser);
-                  if (_formKeyUser.currentState!.validate()) {
-                    setState(() {
-                      // Create the work object using positional args
-                      // Note: We are now storing the *intent* to create in _work
-                      // The actual DB insertion happens in _finalizeCheckout
-                      _user = NewOrExistingUser.create(
-                        _user!.id,
-                        _nameController.text,
-                        _emailController.text,
-                      );
-                    });
-                    _nextStep(); // Advance after successful validation and creation
-                  }
-                };
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  continueAction.value = () {
+                    if (_formKeyUser.currentState!.validate()) {
+                      setState(() {
+                        // Create the work object using positional args
+                        // Note: We are now storing the *intent* to create in _work
+                        // The actual DB insertion happens in _finalizeCheckout
+                        _user = NewOrExistingUser.create(
+                          _user!.id,
+                          _nameController.text,
+                          _emailController.text,
+                        );
+                      });
+                      _nextStep(); // Advance after successful validation and creation
+                    }
+                  };
+                });
               } else {
                 final userData = snapshot.data!;
                 // Adjust key based on your actual database structure
@@ -320,7 +340,9 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   ),
                 );
                 // Action: Just advance to the next step
-                continueAction = _nextStep;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  continueAction.value = _nextStep;
+                });
               }
 
               return body;
@@ -328,9 +350,13 @@ class _MultiStepModalState extends State<MultiStepModal> {
           ),
           [
             SizedBox.shrink(), // Placeholder for potential back button?
-            TextButton(
-              onPressed: continueAction,
-              child: const Text('Continue'),
+            ValueListenableBuilder(
+              valueListenable: continueAction,
+              builder:
+                  (context, value, child) => TextButton(
+                    onPressed: value,
+                    child: const Text('Continue'),
+                  ),
             ),
           ],
         );
@@ -568,26 +594,20 @@ class _MultiStepModalState extends State<MultiStepModal> {
       canPop: _currentStep == 0,
       onPopInvokedWithResult: (didPop, result) => {_previousStep()},
       child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: FractionallySizedBox(
+        padding: MediaQuery.of(context).viewInsets,
+        child: SizedBox(
           // Adjust height factor as needed (e.g., 0.7 for 70% of screen height)
-          heightFactor: 0.6,
-          child: Scaffold(
-            // Use Scaffold for AppBar and consistent structure
-            backgroundColor: Colors.transparent,
-            body: Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
-              child: Column(
-                children: [
-                  Expanded(child: body),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: footer,
-                  ),
-                ],
-              ),
+          height: 400,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
+            child: Column(
+              children: [
+                Expanded(child: body),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: footer,
+                ),
+              ],
             ),
           ),
         ),
