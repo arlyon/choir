@@ -1,5 +1,5 @@
 -- Table for choir works/booklets
-CREATE TABLE IF NOT EXISTSworks (
+CREATE TABLE IF NOT EXISTS works (
     work_id TEXT PRIMARY KEY NOT NULL, -- ID used in QR codes
     title TEXT NOT NULL,
     composer TEXT
@@ -7,16 +7,16 @@ CREATE TABLE IF NOT EXISTSworks (
 
 -- Table for choir members
 CREATE TABLE IF NOT EXISTS users (
-    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    email TEXT UNIQUE -- Optional: for contact/notifications
+    email TEXT
 );
 
 -- Table to track checkouts
 CREATE TABLE IF NOT EXISTS checkouts (
     checkout_id INTEGER PRIMARY KEY AUTOINCREMENT,
     work_id TEXT NOT NULL,
-    user_id INTEGER NOT NULL,
+    user_id TEXT NOT NULL,
     instance INTEGER UNIQUE,
     checkout_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     return_timestamp DATETIME, -- NULL indicates currently checked out

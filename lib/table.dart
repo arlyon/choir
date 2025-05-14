@@ -1,42 +1,223 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'scanner_modal.dart';
+import 'user_scanner_modal.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter/services.dart';
+import 'package:timeago/timeago.dart' as timeago;
+import 'package:barcode/barcode.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'dart:convert';
 
-import 'package:flutter/material.dart'; // Keep material import
+import 'database_helper.dart';
+import 'main.dart';
 
-import 'database_helper.dart'; // Import the database helper
-import 'main.dart'; // Keep main import for WriteModel
+class CheckOutCard extends StatelessWidget {
+  final Map<String, dynamic> item;
+  final bool isArchived;
+
+  const CheckOutCard({Key? key, required this.item, this.isArchived = false})
+    : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final title = item['work_title']?.toString() ?? 'Unknown Title';
+    final user = item['user_name']?.toString() ?? 'Unknown User';
+    final composer = item['composer']?.toString();
+    final checkoutTimestampStr = item['checkout_timestamp']?.toString();
+    final returnTimestampStr = item['return_timestamp']?.toString();
+    final relativeCheckoutTime = _formatRelativeTime(
+      checkoutTimestampStr,
+      context,
+    );
+    final relativeReturnTime = _formatRelativeTime(returnTimestampStr, context);
+    return GestureDetector(
+      onTap: () {
+        final workId = item['work_id']?.toString() ?? 'N/A';
+        final userId = item['user_id']?.toString() ?? 'N/A';
+        final userBarcodeData = userId;
+        final workBarcodeData = workId;
+
+        final userBarcodeSvg = Barcode.code128().toSvg(
+          userBarcodeData,
+          drawText: false,
+          width: 400,
+          height: 200,
+        );
+        final workBarcodeSvg = Barcode.code128().toSvg(
+          workBarcodeData,
+          drawText: false,
+          width: 400,
+          height: 200,
+        );
+
+        HapticFeedback.heavyImpact();
+        showModalBottomSheet(
+          isScrollControlled: true,
+
+          context: context,
+          showDragHandle: true,
+          builder: (BuildContext context) {
+            return Container(
+              padding: EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(user),
+                  SvgPicture.string(
+                    userBarcodeSvg,
+                    colorFilter: ColorFilter.mode(
+                      Theme.of(context).hintColor,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(title),
+                  SvgPicture.string(
+                    workBarcodeSvg,
+                    colorFilter: ColorFilter.mode(
+                      Theme.of(context).hintColor,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+        elevation: isArchived ? 1.0 : 2.0,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        spacing: 4.0,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (composer != null && composer.isNotEmpty)
+                            Text(
+                              composer,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context).hintColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                      Text(user, style: const TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.outbox_sharp,
+                            size: 12,
+                            color: Theme.of(context).hintColor,
+                          ),
+                          SizedBox(width: 2),
+                          Text(
+                            relativeCheckoutTime,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).hintColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (isArchived)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.move_to_inbox_sharp,
+                              size: 12,
+                              color: Theme.of(context).hintColor,
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              relativeReturnTime,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).hintColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatRelativeTime(String? timestampStr, BuildContext context) {
+    if (timestampStr == null) {
+      return 'Unknown date';
+    }
+    try {
+      final dateTime = DateTime.parse(timestampStr).toLocal();
+      return timeago.format(dateTime);
+    } catch (e) {
+      print("Error parsing timestamp '$timestampStr': $e");
+      return 'Invalid Date';
+    }
+  }
+}
 
 class CheckedOutList extends StatefulWidget {
   final WriteModel writeModel;
 
-  const CheckedOutList({super.key, required this.writeModel});
+  const CheckedOutList({Key? key, required this.writeModel}) : super(key: key);
 
   @override
-  State<CheckedOutList> createState() => _CheckedOutListState();
+  _CheckedOutListState createState() => _CheckedOutListState();
 }
 
 class _CheckedOutListState extends State<CheckedOutList> {
-  // Remove direct client and sync timer
-  // LibsqlClient? _client;
-  // Timer? _syncTimer;
   String? _error;
-  bool _isLoading = true; // Add loading state
-  List<Map<String, dynamic>> _currentItems = []; // Raw data from DB
-  List<Map<String, dynamic>> _filteredCurrentItems = []; // Data after filtering
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
+  List<Map<String, dynamic>> _currentItems = [];
+  List<Map<String, dynamic>> _filteredCurrentItems = [];
   List<Map<String, dynamic>> _archiveItems = [];
-
-  // Filter state
   Set<String> _selectedPersons = {};
+  String? _currentUserId;
   Set<String> _selectedWorkTitles = {};
-  List<String> _availablePersons = [];
-  List<String> _availableWorkTitles = [];
-  bool _showArchive = false; // State to control archive visibility
+  Map<String, String> _availablePersons = {};
+  Map<String, String> _availableWorkTitles = {};
+  bool _showArchive = false;
 
   @override
   void initState() {
     super.initState();
 
-    _refreshData(true);
+    _refreshData(false);
 
     widget.writeModel.addListener(() {
       _refreshData(false);
@@ -51,55 +232,47 @@ class _CheckedOutListState extends State<CheckedOutList> {
   Future<void> _refreshData(bool sync) async {
     if (!mounted) return;
 
-    // Set loading state only if not already loading (prevents flicker on rapid calls)
-    if (!_isLoading) {
-      setState(() {
-        _isLoading = true;
-        _error = null; // Clear previous error on refresh attempt
-      });
-    }
-
     try {
-      print("Initializing DatabaseHelper...");
-      await DatabaseHelper.instance.initialize(true);
-      await DatabaseHelper.instance.tryGoOnline(sync);
-      if (sync) {
-        print("Syncing!");
-        await DatabaseHelper.instance.sync();
+      print("refreshing data");
+      await DatabaseHelper.instance.initialize();
+      if (!await DatabaseHelper.instance.tryGoOnline(sync)) {
+        throw Exception("Failed to connect to database.");
       }
 
-      // Fetch data using DatabaseHelper methods
-      print("Fetching current items...");
-      final currentData = await DatabaseHelper.instance.fetchCurrentItems();
-      final archiveData = await DatabaseHelper.instance.fetchArchiveItems();
-      print("Done");
+      final data = await Future.wait([
+        DatabaseHelper.instance.fetchCurrentItems(),
+        DatabaseHelper.instance.fetchArchiveItems(),
+      ]);
 
-      // Extract unique filter options from current items
-      final Set<String> persons = {};
-      final Set<String> titles = {};
+      final currentData = data[0];
+      final archiveData = data[1];
+
+      final Map<String, String> persons = {};
+      final Map<String, String> titles = {};
       for (var item in currentData) {
-        if (item['user_name'] != null) persons.add(item['user_name']);
-        if (item['work_title'] != null) titles.add(item['work_title']);
+        if (item['user_id'] != null && item['user_name'] != null) {
+          persons[item['user_id'].toString()] = item['user_name'];
+        }
+        if (item['work_id'] != null && item['work_title'] != null) {
+          titles[item['work_id'].toString()] = item['work_title'];
+        }
       }
 
       if (mounted) {
         setState(() {
           _currentItems = currentData;
           _archiveItems = archiveData;
-          _availablePersons = persons.toList()..sort();
-          _availableWorkTitles = titles.toList()..sort();
-          _applyFilters(); // Apply filters after data is loaded/refreshed
+          _availablePersons = persons;
+          _availableWorkTitles = titles;
+          _applyFilters();
           _error = null;
-          _isLoading = false; // Data loaded successfully
         });
       }
     } catch (e) {
       print("Error refreshing data in CheckedOutList: $e");
       if (mounted) {
         setState(() {
-          _error =
-              "Failed to refresh data. Check connection or logs."; // User-friendly error
-          _isLoading = false; // Stop loading on error
+          _error = "Failed to refresh data. Check connection or logs.";
         });
       }
     }
@@ -107,32 +280,26 @@ class _CheckedOutListState extends State<CheckedOutList> {
 
   void _applyFilters() {
     setState(() {
-      // Wrap with setState to trigger UI updates
       if (_selectedPersons.isEmpty && _selectedWorkTitles.isEmpty) {
-        _filteredCurrentItems = List.from(
-          _currentItems,
-        ); // No filters, show all
+        _filteredCurrentItems = List.from(_currentItems);
       } else {
         _filteredCurrentItems =
             _currentItems.where((item) {
               final personMatch =
                   _selectedPersons.isEmpty ||
-                  (_selectedPersons.contains(item['user_name']));
+                  (_selectedPersons.contains(item['user_id'].toString()));
               final titleMatch =
                   _selectedWorkTitles.isEmpty ||
-                  (_selectedWorkTitles.contains(item['work_title']));
+                  (_selectedWorkTitles.contains(item['work_id'].toString()));
               return personMatch && titleMatch;
             }).toList();
       }
     });
   }
 
-  // --- Filter UI Methods ---
-
-  // Shows a dialog for selecting filters (Person or Work Title)
   Future<void> _showFilterDialog(
     String filterType,
-    List<String> options,
+    Map<String, String> options,
     Set<String> selectedValues,
   ) async {
     Set<String> tempSelected = Set.from(selectedValues);
@@ -143,79 +310,97 @@ class _CheckedOutListState extends State<CheckedOutList> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            List<String> filteredOptions =
-                options
+            List<MapEntry<String, String>> filteredOptions =
+                options.entries
                     .where(
-                      (option) => option.toLowerCase().contains(
+                      (entry) => entry.value.toLowerCase().contains(
                         searchQuery.toLowerCase(),
                       ),
                     )
                     .toList();
 
-            return AlertDialog(
-              title: Text('Filter by $filterType'),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Search $filterType',
-                        prefixIcon: Icon(Icons.search),
-                      ),
-                      onChanged: (value) {
-                        setDialogState(() {
-                          searchQuery = value;
-                        });
-                      },
-                    ),
-                    Expanded(
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: filteredOptions.length,
-                        itemBuilder: (context, index) {
-                          final option = filteredOptions[index];
-                          final isSelected = tempSelected.contains(option);
-                          return CheckboxListTile(
-                            title: Text(option),
-                            value: isSelected,
-                            onChanged: (bool? value) {
-                              setDialogState(() {
-                                if (value == true) {
-                                  tempSelected.add(option);
-                                } else {
-                                  tempSelected.remove(option);
-                                }
-                              });
-                            },
-                          );
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8.0, 16.0, 8.0, 8.0),
+                child: SizedBox(
+                  width: double.maxFinite,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        decoration: InputDecoration(
+                          labelText: 'Search $filterType',
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setDialogState(() {
+                            searchQuery = value;
+                          });
                         },
                       ),
-                    ),
-                  ],
+                      Expanded(
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: filteredOptions.length,
+                          itemBuilder: (context, index) {
+                            final entry = filteredOptions[index];
+                            final isSelected = tempSelected.contains(entry.key);
+                            return CheckboxListTile(
+                              title: Text(entry.value),
+                              value: isSelected,
+                              onChanged: (bool? value) {
+                                setDialogState(() {
+                                  if (value == true) {
+                                    tempSelected.add(entry.key.toString());
+                                  } else {
+                                    tempSelected.remove(entry.key.toString());
+                                  }
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            child: const Text('Cancel'),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            child: const Text('Apply'),
+                            onPressed: () {
+                              setState(() {
+                                if (filterType == 'Person') {
+                                  _selectedPersons =
+                                      tempSelected.cast<String>();
+                                } else if (filterType == 'Work Title') {
+                                  _selectedWorkTitles =
+                                      tempSelected.cast<String>();
+                                }
+                                _applyFilters();
+                              });
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              actions: [
-                TextButton(
-                  child: const Text('Cancel'),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                TextButton(
-                  child: const Text('Apply'),
-                  onPressed: () {
-                    setState(() {
-                      if (filterType == 'Person') {
-                        _selectedPersons = tempSelected;
-                      } else if (filterType == 'Work Title') {
-                        _selectedWorkTitles = tempSelected;
-                      }
-                      _applyFilters(); // Apply the filters
-                    });
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
             );
           },
         );
@@ -223,11 +408,9 @@ class _CheckedOutListState extends State<CheckedOutList> {
     );
   }
 
-  // Builds the horizontally scrollable filter chip row
   Widget _buildFilterChips() {
     List<Widget> chips = [];
 
-    // Add initial filter chips
     chips.add(
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -261,14 +444,15 @@ class _CheckedOutListState extends State<CheckedOutList> {
       ),
     );
 
-    // Add Archive toggle chip
     chips.add(
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: FilterChip(
           label: const Text('Archived'),
+          showCheckmark: false,
           selected: _showArchive,
           onSelected: (bool selected) {
+            HapticFeedback.mediumImpact();
             setState(() {
               _showArchive = selected;
             });
@@ -287,33 +471,83 @@ class _CheckedOutListState extends State<CheckedOutList> {
       ),
     );
 
-    // Add chips for selected persons
-    chips.addAll(
-      _selectedPersons.map(
-        (person) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-          child: Chip(
-            shape: StadiumBorder(),
-            label: Text(person),
-            onDeleted: () {
+    chips.add(
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: GestureDetector(
+          onLongPress: () {
+            showModalBottomSheet(
+              context: context,
+              builder: (context) => UserScannerModal(),
+            );
+          },
+          child: FilterChip(
+            label: const Text('Me'),
+            showCheckmark: false,
+            selected: _selectedPersons.isNotEmpty,
+            onSelected: (bool selected) async {
+              HapticFeedback.mediumImpact();
+              const storage = FlutterSecureStorage();
+              final userId = await storage.read(key: 'user_id');
               setState(() {
-                _selectedPersons.remove(person);
+                _selectedPersons.clear();
+                if (selected && userId != null) {
+                  _selectedPersons.add(userId);
+                } else if (userId == null) {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (context) => UserScannerModal(),
+                  );
+                  return;
+                }
                 _applyFilters();
               });
             },
+            avatar: Icon(
+              Icons.face,
+              color:
+                  _selectedPersons.isNotEmpty
+                      ? Theme.of(context).colorScheme.onSecondaryContainer
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            shape: StadiumBorder(),
+            selectedColor: Theme.of(context).colorScheme.secondaryContainer,
+            checkmarkColor: Theme.of(context).colorScheme.onSecondaryContainer,
           ),
         ),
       ),
     );
 
-    // Add chips for selected work titles
+    chips.addAll(
+      _selectedPersons
+          .where((p) => p != _currentUserId)
+          .map(
+            (person) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: Chip(
+                shape: StadiumBorder(),
+                label: Text(_availablePersons[person] ?? person),
+                onDeleted: () {
+                  setState(() {
+                    _selectedPersons.remove(person);
+                    _applyFilters();
+                  });
+                },
+              ),
+            ),
+          ),
+    );
+
     chips.addAll(
       _selectedWorkTitles.map(
         (title) => Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4.0),
           child: Chip(
             shape: StadiumBorder(),
-            label: Text(title, overflow: TextOverflow.ellipsis),
+            label: Text(
+              _availableWorkTitles[title] ?? title,
+              overflow: TextOverflow.ellipsis,
+            ),
             onDeleted: () {
               setState(() {
                 _selectedWorkTitles.remove(title);
@@ -327,6 +561,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
       child: Row(children: chips),
     );
@@ -335,6 +570,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
+      key: _refreshIndicatorKey,
       onRefresh: () async {
         await _refreshData(true);
       },
@@ -342,106 +578,56 @@ class _CheckedOutListState extends State<CheckedOutList> {
     );
   }
 
+  Future<(String, String)?> _getUserId() async {
+    const storage = FlutterSecureStorage();
+    final userId = await storage.read(key: 'user_id');
+    if (userId == null) return null;
+    final userBarcodeData = userId;
+    final userBarcodeSvg = Barcode.code128().toSvg(
+      userBarcodeData,
+      drawText: false,
+      width: 500,
+      height: 200,
+    );
+    _currentUserId = userId;
+    return (userId, userBarcodeSvg);
+  }
+
   Widget _buildContent() {
+    List<Widget> content = [];
+
     if (_error != null) {
-      // Keep error display but ensure it's scrollable within RefreshIndicator
-      return ListView(
-        // Use ListView for scrollability
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.3,
-          ), // Add some top padding
-          Padding(
+      content.add(
+        SliverToBoxAdapter(
+          child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Center(
-              child: Column(
-                // Use Column for text and maybe a retry button
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: Theme.of(context).colorScheme.error,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.refresh),
-                    label: const Text("Retry"),
-                    onPressed: () => _refreshData(true), // Retry with sync
-                  ),
-                ],
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
           ),
-        ],
+        ),
       );
-    }
-
-    // Use _filteredCurrentItems for checking emptiness now
-    if (_filteredCurrentItems.isEmpty &&
-        _archiveItems.isEmpty &&
-        _selectedPersons.isEmpty &&
-        _selectedWorkTitles.isEmpty) {
-      return LayoutBuilder(
-        // Use LayoutBuilder to get constraints
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            // Ensure scrollability
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              // Ensure it takes at least viewport height
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: SizedBox.expand(),
-            ),
-          );
-        },
-      );
-    }
-
-    // Main content structure using CustomScrollView
-    return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(child: _buildFilterChips()),
+    } else {
+      content.addAll([
         if (_filteredCurrentItems.isNotEmpty)
           SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final item = _filteredCurrentItems[index]; // Use filtered list
-                final title = item['work_title']?.toString() ?? 'Unknown Title';
-                final user = item['user_name']?.toString() ?? 'Unknown User';
-                final timestamp =
-                    item['checkout_timestamp']?.toString() ?? 'No Date';
-
-                return ListTile(
-                  title: Text(title),
-                  subtitle: Text('Checked out by: $user'),
-                  trailing: Text(timestamp),
-                  leading: const Icon(Icons.outbox), // Icon for checked out
-                );
-              },
-              childCount: _filteredCurrentItems.length,
-            ), // Use filtered list length
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final item = _filteredCurrentItems[index];
+              return CheckOutCard(item: item);
+            }, childCount: _filteredCurrentItems.length),
           )
-        else // Show message if filters result in empty list
+        else
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Center(
                 child: Text(
                   (_selectedPersons.isEmpty && _selectedWorkTitles.isEmpty)
-                      ? 'No items currently checked out.' // Original message
-                      : 'No items match the selected filters.', // Filtered message
+                      ? 'No items currently checked out.'
+                      : 'No items match the selected filters.',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -449,20 +635,12 @@ class _CheckedOutListState extends State<CheckedOutList> {
               ),
             ),
           ),
-
-        // --- Conditionally Display Archive Section ---
         if (_showArchive) ...[
           SliverToBoxAdapter(
-            // Add a header for the archive section
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                16.0,
-                16.0,
-                16.0,
-                8.0,
-              ), // Adjust padding
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
               child: Text(
-                'Archived Items (${_archiveItems.length})', // Show count
+                'Archived Items (${_archiveItems.length})',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -475,26 +653,10 @@ class _CheckedOutListState extends State<CheckedOutList> {
             SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final item = _archiveItems[index];
-                final title = item['work_title']?.toString() ?? 'Unknown Title';
-                final user = item['user_name']?.toString() ?? 'Unknown User';
-                final checkoutTs =
-                    item['checkout_timestamp']?.toString() ??
-                    'No Checkout Date';
-                final returnTs =
-                    item['return_timestamp']?.toString() ?? 'No Return Date';
-
-                return ListTile(
-                  title: Text(title),
-                  subtitle: Text('Checked out by: $user\nReturned: $returnTs'),
-                  trailing: Text('Checked out: $checkoutTs'),
-                  leading: const Icon(
-                    Icons.archive_outlined,
-                  ), // Icon for archived
-                  isThreeLine: true,
-                );
+                return CheckOutCard(item: item, isArchived: true);
               }, childCount: _archiveItems.length),
             )
-          else // Show message if archive is empty but shown
+          else
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -510,6 +672,47 @@ class _CheckedOutListState extends State<CheckedOutList> {
               ),
             ),
         ],
+      ]);
+    }
+
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        FutureBuilder<(String, String)?>(
+          future: _getUserId(),
+          builder: (context, snapshot) {
+            if (snapshot.data != null) {
+              return SliverToBoxAdapter(
+                child: AnimatedSize(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOut,
+                  child: SizedBox(
+                    height:
+                        _selectedPersons.contains(snapshot.data!.$1)
+                            ? 180
+                            : 0, // 200 (barcode height) + 32 (padding)
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Center(
+                        child: SvgPicture.string(
+                          snapshot.data!.$2,
+                          colorFilter: ColorFilter.mode(
+                            Theme.of(context).hintColor,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              return SliverToBoxAdapter(child: SizedBox.shrink());
+            }
+          },
+        ),
+        SliverToBoxAdapter(child: _buildFilterChips()),
+        ...content,
       ],
     );
   }

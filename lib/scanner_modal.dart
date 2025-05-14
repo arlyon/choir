@@ -24,16 +24,28 @@ class _MultiStepModalState extends State<MultiStepModal> {
     ('Summary', false),
   ];
 
-  String? _workId;
-  String? _userId;
-  bool _loading = false;
+  NewOrExistingWork? _work;
+  NewOrExistingUser? _user;
 
-  final MobileScannerController _scannerController =
-      MobileScannerController(); // Scanner controller
+  final MobileScannerController _scannerController = MobileScannerController();
+
+  Future<Map<String, dynamic>?>? _userFuture;
+  Future<Map<String, dynamic>?>? _workFuture;
+  Future<bool>? _checkoutFuture;
+
+  VoidCallback? continueAction;
+
+  final _formKeyWork = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _composerController = TextEditingController();
+
+  final _formKeyUser = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
 
   Future<void> _nextStep() async {
     if (_currentStep < _steps.length - 1) {
-      HapticFeedback.lightImpact();
+      HapticFeedback.mediumImpact();
 
       var id = _currentStep + 1;
       if (_steps[id].$2) {
@@ -45,14 +57,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
         _currentStep = id;
       });
     } else {
-      // Finalize action
-      setState(() {
-        _loading = true;
-      });
       await _finalizeCheckout(); // Call finalize function
-      setState(() {
-        _loading = false;
-      });
       Navigator.pop(context); // Close the modal
     }
   }
@@ -79,9 +84,11 @@ class _MultiStepModalState extends State<MultiStepModal> {
     if (code != null) {
       setState(() {
         if (_currentStep == 0) {
-          _workId = code;
+          _work = NewOrExistingWork.existing(code);
+          _workFuture = DatabaseHelper.instance.getWorkById(code);
         } else if (_currentStep == 2) {
-          _userId = code;
+          _user = NewOrExistingUser.existing(code);
+          _userFuture = DatabaseHelper.instance.getUserById(code);
         }
       });
       if (_currentStep == 0 || _currentStep == 2) {
@@ -90,279 +97,414 @@ class _MultiStepModalState extends State<MultiStepModal> {
     }
   }
 
-  Widget _buildStepContent(int stepIndex) {
+  (Widget, List<Widget>) _buildStepContent(int stepIndex) {
     final theme = Theme.of(context);
     switch (stepIndex) {
       case 0:
       case 2:
-        return Column(
-          children: [
-            Text(
-              stepIndex == 0
-                  ? 'Scan the QR code on the music booklet.'
-                  : 'Scan the QR code for the person.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.labelMedium!.copyWith(
-                color: theme.disabledColor,
+        return (
+          Column(
+            children: [
+              Text(
+                stepIndex == 0
+                    ? 'Scan the QR code on the music booklet.'
+                    : 'Scan the QR code for the person.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelMedium!.copyWith(
+                  color: theme.disabledColor,
+                ),
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ClipRRect(
-                  // Clip the scanner view for rounded corners
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: MobileScanner(
-                    controller: _scannerController,
-                    onDetect: _handleBarcode,
-                    // Optional: Add overlay, customize scan window, etc.
-                    // scanWindow: Rect.fromCenter(center: Offset(size.width / 2, size.height / 2), width: 250, height: 250),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ClipRRect(
+                    // Clip the scanner view for rounded corners
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: MobileScanner(
+                      controller: _scannerController,
+                      onDetect: _handleBarcode,
+                      // Optional: Add overlay, customize scan window, etc.
+                      // scanWindow: Rect.fromCenter(center: Offset(size.width / 2, size.height / 2), width: 250, height: 250),
+                    ),
                   ),
                 ),
               ),
+            ],
+          ),
+          [
+            TextButton(onPressed: _openSearch, child: const Text("Search")),
+            TextButton(onPressed: null, child: const Text('Continue')),
+          ],
+        );
+      case 1:
+        return (
+          FutureBuilder<Map<String, dynamic>?>(
+            future: _workFuture,
+            builder: (context, snapshot) {
+              Widget body;
+
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                body = const Center(child: CircularProgressIndicator());
+                continueAction = null; // Disable continue while loading
+              } else if (snapshot.hasError) {
+                body = Center(
+                  child: Text('Error fetching work details: ${snapshot.error}'),
+                );
+                continueAction = null; // Disable on error
+              } else if (!snapshot.hasData || snapshot.data == null) {
+                _titleController.text = switch (_work) {
+                  ExistingWork(:final id) => id.split(" ").first,
+                  CreateWork(:final name) => name,
+                  null => "",
+                };
+
+                body = _buildCreateWorkForm(
+                  theme,
+                  _formKeyWork,
+                  _titleController,
+                  _composerController,
+                );
+                // Action: Validate form, create work object, then advance
+                continueAction = () {
+                  if (_formKeyWork.currentState!.validate()) {
+                    setState(() {
+                      // Create the work object using positional args
+                      // Note: We are now storing the *intent* to create in _work
+                      // The actual DB insertion happens in _finalizeCheckout
+                      _work = NewOrExistingWork.create(
+                        _work!.id,
+                        _titleController.text,
+                        _composerController
+                            .text, // Pass empty string if null/empty
+                        null, // Instance is null for now
+                      );
+                    });
+                    _nextStep(); // Advance after successful validation and creation
+                  }
+                };
+              } else {
+                // Work exists, show details
+                final workData = snapshot.data!;
+                final title = workData['title'] ?? 'Unknown Title';
+                final composer = workData['composer'] ?? 'Unknown Composer';
+                body = Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.book,
+                          size: 50,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          title,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        Text(
+                          composer,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '(ID: ${_work?.maybeMap(existing: (e) => e.id, orElse: () => 'New')})', // Show the original scanned ID or 'New'
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.disabledColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+                // Action: Just advance to the next step
+                continueAction = _nextStep;
+              }
+
+              // Return the body and the correctly configured button action
+              // We need to return the tuple (Widget, List<Widget>) expected by _buildStepContent
+              return body;
+            },
+          ),
+          [
+            SizedBox.shrink(), // Placeholder for potential back button?
+            TextButton(
+              onPressed: continueAction,
+              child: const Text('Continue'),
             ),
           ],
         );
-      case 1: // Confirm Music
-        if (_workId == null) {
-          // This case should ideally not be reached if the flow is correct
-          return const Center(
-            child: Text('Error: Work ID not available. Please go back.'),
-          );
-        }
-        return FutureBuilder<Map<String, dynamic>?>(
-          future: DatabaseHelper.instance.getWorkById(
-            _workId!,
-          ), // Fetch work details
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(
-                child: Text('Error fetching work details: ${snapshot.error}'),
-              );
-            } else if (!snapshot.hasData || snapshot.data == null) {
-              return Center(child: Text('Work with ID $_workId not found.'));
-            } else {
-              final workData = snapshot.data!;
-              // Adjust keys based on your actual database structure
-              final title = workData['title'] ?? 'Unknown Title';
-              final composer = workData['composer'] ?? 'Unknown Composer';
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.book,
-                        size: 50,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        title,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurface,
+      case 3:
+        return (
+          FutureBuilder<Map<String, dynamic>?>(
+            future: _userFuture,
+            builder: (context, snapshot) {
+              Widget body;
+
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                body = const Center(child: CircularProgressIndicator());
+                continueAction = null; // Disable continue while loading
+              } else if (snapshot.hasError) {
+                body = Center(
+                  child: Text('Error fetching work details: ${snapshot.error}'),
+                );
+                continueAction = null; // Disable on error
+              } else if (!snapshot.hasData || snapshot.data == null) {
+                _nameController.text = switch (_user) {
+                  ExistingUser(:final id) => id.split(" ").first,
+                  CreateUser(:final name) => name,
+                  null => "",
+                };
+
+                body = _buildCreateUserForm(
+                  theme,
+                  _formKeyUser,
+                  _nameController,
+                  _emailController,
+                );
+                continueAction = () {
+                  print(_formKeyUser);
+                  if (_formKeyUser.currentState!.validate()) {
+                    setState(() {
+                      // Create the work object using positional args
+                      // Note: We are now storing the *intent* to create in _work
+                      // The actual DB insertion happens in _finalizeCheckout
+                      _user = NewOrExistingUser.create(
+                        _user!.id,
+                        _nameController.text,
+                        _emailController.text,
+                      );
+                    });
+                    _nextStep(); // Advance after successful validation and creation
+                  }
+                };
+              } else {
+                final userData = snapshot.data!;
+                // Adjust key based on your actual database structure
+                final name = userData['name'] ?? 'Unknown User';
+                body = Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.person,
+                          size: 50,
+                          color: theme.colorScheme.primary,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      Text(
-                        composer,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                        const SizedBox(height: 16),
+                        Text(
+                          name,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '(ID: $_workId)',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.disabledColor,
+                        const SizedBox(height: 8),
+                        Text(
+                          '(ID: 123)',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.disabledColor,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }
-          },
-        );
-      case 3: // Confirm Person
-        if (_userId == null) {
-          // This case should ideally not be reached if the flow is correct
-          return const Center(
-            child: Text('Error: User ID not available. Please go back.'),
-          );
-        }
-        return FutureBuilder<Map<String, dynamic>?>(
-          future: DatabaseHelper.instance.getUserById(
-            _userId!,
-          ), // Fetch user details
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(
-                child: Text('Error fetching user details: ${snapshot.error}'),
-              );
-            } else if (!snapshot.hasData || snapshot.data == null) {
-              return Center(child: Text('User with ID $_userId not found.'));
-            } else {
-              final userData = snapshot.data!;
-              // Adjust key based on your actual database structure
-              final name = userData['name'] ?? 'Unknown User';
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.person,
-                        size: 50,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        name,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '(ID: $_userId)',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.disabledColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-          },
+                );
+                // Action: Just advance to the next step
+                continueAction = _nextStep;
+              }
+
+              return body;
+            },
+          ),
+          [
+            SizedBox.shrink(), // Placeholder for potential back button?
+            TextButton(
+              onPressed: continueAction,
+              child: const Text('Continue'),
+            ),
+          ],
         );
       case 4: // Summary
-        if (_workId == null || _userId == null) {
-          // Should not happen if flow is correct, but handle defensively
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Error: Missing Work ID or User ID. Please go back and scan both QR codes.',
-                style: TextStyle(color: theme.colorScheme.error),
-                textAlign: TextAlign.center,
+        if (_work == null || _user == null) {
+          return (
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Error: Missing Work ID or User ID. Please go back and scan both QR codes.',
+                  style: TextStyle(color: theme.colorScheme.error),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
+            [SizedBox.shrink()],
           );
+        } else {
+          if (_work case ExistingWork(id: final workId)) {
+            if (_user case ExistingUser(id: final userId)) {
+              _checkoutFuture = DatabaseHelper.instance.checkExistingCheckout(
+                workId,
+                userId,
+              );
+            } else {
+              _checkoutFuture = Future.value(false);
+            }
+          } else {
+            _checkoutFuture = Future.value(false);
+          }
         }
 
         // Use Future.wait to fetch all required data concurrently
-        return FutureBuilder<List<dynamic>>(
-          future: Future.wait([
-            DatabaseHelper.instance.getUserById(_userId!),
-            DatabaseHelper.instance.getWorkById(_workId!),
-            DatabaseHelper.instance.checkExistingCheckout(_workId!, _userId!),
-          ]),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError ||
-                !snapshot.hasData ||
-                snapshot.data == null) {
+        return (
+          FutureBuilder<List<dynamic>>(
+            future: Future.wait([_userFuture!, _workFuture!, _checkoutFuture!]),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError ||
+                  !snapshot.hasData ||
+                  snapshot.data == null) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Error loading summary details. Please try again.',
+                      style: TextStyle(color: theme.colorScheme.error),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                );
+              }
+
+              // Extract data - handle potential nulls from DB lookups
+              final userData = snapshot.data![0] as Map<String, dynamic>?;
+              final workData = snapshot.data![1] as Map<String, dynamic>?;
+              final isReturning =
+                  snapshot.data![2] as bool; // checkExistingCheckout result
+
+              final userName = switch (_user) {
+                ExistingUser() =>
+                  userData?['name'] as String? ?? "Unknown User",
+                CreateUser(:final name) => name,
+                _ => "Unknown User",
+              };
+
+              final workTitle = switch (_work) {
+                ExistingWork() =>
+                  workData?['title'] as String? ?? "Unknown Work",
+                CreateWork(:final name) => name,
+                _ => "Unknown Work",
+              };
+
+              final workComposer = switch (_work) {
+                ExistingWork() => workData?['composer'] as String?,
+                CreateWork(:final composer) => composer,
+                _ => null,
+              };
+
+              final workDisplay =
+                  workComposer?.isNotEmpty == true
+                      ? '$workTitle by $workComposer'
+                      : workTitle;
+
+              final actionText = isReturning ? 'returning' : 'checking out';
+
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Error loading summary details. Please try again.',
-                    style: TextStyle(color: theme.colorScheme.error),
-                    textAlign: TextAlign.center,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        isReturning
+                            ? Icons.arrow_downward
+                            : Icons.arrow_upward, // Icon indicating direction
+                        size: 40,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(height: 16),
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          children: <TextSpan>[
+                            TextSpan(
+                              text: userName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(text: '\nis $actionText\n'),
+                            TextSpan(
+                              text: workDisplay,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '(Work ID: $_work, User ID: $_user)',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.disabledColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
               );
-            }
-
-            // Extract data - handle potential nulls from DB lookups
-            final userData = snapshot.data![0] as Map<String, dynamic>?;
-            final workData = snapshot.data![1] as Map<String, dynamic>?;
-            final isReturning =
-                snapshot.data![2] as bool; // checkExistingCheckout result
-
-            final userName = userData?['name'] ?? 'Unknown User (ID: $_userId)';
-            final workTitle = workData?['title'] ?? 'Unknown Work';
-            final workComposer = workData?['composer'] ?? 'Unknown Composer';
-            final workDisplay =
-                workComposer.isNotEmpty
-                    ? '$workTitle by $workComposer'
-                    : workTitle;
-            final actionText = isReturning ? 'returning' : 'checking out';
-
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      isReturning
-                          ? Icons.arrow_downward
-                          : Icons.arrow_upward, // Icon indicating direction
-                      size: 40,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(height: 16),
-                    RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        children: <TextSpan>[
-                          TextSpan(
-                            text: userName,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          TextSpan(text: '\nis $actionText\n'),
-                          TextSpan(
-                            text: workDisplay,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '(Work ID: $_workId, User ID: $_userId)',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.disabledColor,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+            },
+          ),
+          [
+            SizedBox.shrink(), // Placeholder for potential back button?
+            TextButton.icon(
+              // Enable finalize only if both IDs are scanned
+              onPressed:
+                  (_user != null && _work != null && true) ? _nextStep : null,
+              label: const Text('Finalize'),
+              icon:
+                  false
+                      ? Container(
+                        width: 24,
+                        height: 24,
+                        padding: const EdgeInsets.all(2.0),
+                        child: const CircularProgressIndicator(strokeWidth: 3),
+                      )
+                      : const Icon(Icons.save_sharp),
+            ),
+          ],
         );
       default:
-        return const SizedBox.shrink();
+        return (const SizedBox.shrink(), []);
     }
   }
 
   // Function to handle the finalization logic
   Future<void> _finalizeCheckout() async {
     // Make async
-    if (_workId != null && _userId != null) {
+    if (_work != null && _user != null) {
       print(
-        "Attempting to finalize checkout for Work ID: $_workId, User ID: $_userId",
+        "Attempting to finalize checkout for Work ID: $_work, User ID: $_user",
       );
       try {
         final (created, id) = await DatabaseHelper.instance.insertCheckout(
-          _workId!,
-          _userId!,
+          _work!,
+          _user!,
         );
 
         widget.onSuccess();
@@ -383,6 +525,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
             showCloseIcon: true,
           ),
         );
+        rethrow;
       }
       // DatabaseHelper.instance.insertCheckout(_workId!, int.parse(_userId!)); // Example call
     } else {
@@ -413,13 +556,14 @@ class _MultiStepModalState extends State<MultiStepModal> {
     // Ensure scanner is stopped and controller disposed
     _scannerController.stop();
     _scannerController.dispose();
-    HapticFeedback.lightImpact();
+    HapticFeedback.heavyImpact();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    var (body, footer) = _buildStepContent(_currentStep);
     return PopScope(
       canPop: _currentStep == 0,
       onPopInvokedWithResult: (didPop, result) => {_previousStep()},
@@ -437,61 +581,123 @@ class _MultiStepModalState extends State<MultiStepModal> {
               padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
               child: Column(
                 children: [
-                  Expanded(child: _buildStepContent(_currentStep)),
+                  Expanded(child: body),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children:
-                        _currentStep != 4
-                            ? [
-                              TextButton(
-                                onPressed: _openSearch,
-                                child: const Text("Search"),
-                              ),
-                              TextButton(
-                                onPressed:
-                                    _currentStep == 1
-                                        ? _workId != null
-                                            ? _nextStep
-                                            : null
-                                        : _currentStep == 3
-                                        ? _userId != null
-                                            ? _nextStep
-                                            : null
-                                        : null, // Manual next for non-scanner steps if any
-                                child: const Text('Continue'),
-                              ),
-                            ]
-                            : // Last step (Summary)
-                            [
-                              Text(""),
-                              TextButton.icon(
-                                // Enable finalize only if both IDs are scanned
-                                onPressed:
-                                    (_workId != null &&
-                                            _userId != null &&
-                                            !_loading)
-                                        ? _nextStep
-                                        : null,
-                                label: const Text('Finalize'),
-                                icon:
-                                    _loading
-                                        ? Container(
-                                          width: 24,
-                                          height: 24,
-                                          padding: const EdgeInsets.all(2.0),
-                                          child:
-                                              const CircularProgressIndicator(
-                                                strokeWidth: 3,
-                                              ),
-                                        )
-                                        : const Icon(Icons.save_sharp),
-                              ),
-                            ],
+                    children: footer,
                   ),
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCreateWorkForm(
+    ThemeData theme,
+    GlobalKey<FormState> formKey,
+    TextEditingController titleController,
+    TextEditingController composerController,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Form(
+        key: formKey,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          spacing: 4.0,
+          children: [
+            Icon(
+              Icons.add_to_photos,
+              size: 48.0,
+              color: theme.colorScheme.primaryFixed,
+            ),
+            Text(
+              'Add a new work',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: titleController,
+              decoration: const InputDecoration(
+                labelText: 'Title',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a title';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: composerController,
+              decoration: const InputDecoration(
+                labelText: 'Composer (optional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCreateUserForm(
+    ThemeData theme,
+    GlobalKey<FormState> formKey,
+    TextEditingController nameController,
+    TextEditingController emailController,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Form(
+        key: formKey,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          spacing: 4.0,
+          children: [
+            Icon(
+              Icons.person_add_alt_1,
+              size: 48.0,
+              color: theme.colorScheme.primaryFixed,
+            ),
+            Text(
+              'Add a new user',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a name';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email (optional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
         ),
       ),
     );

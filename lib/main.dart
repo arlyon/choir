@@ -41,20 +41,18 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           colorScheme: lightDynamic,
           brightness: Brightness.light,
+          fontFamily: 'AktivGrotesk',
         );
         final baseDarkTheme = ThemeData(
           useMaterial3: true,
           colorScheme: darkDynamic,
           brightness: Brightness.dark,
+          fontFamily: 'AktivGrotesk',
         );
 
         return MaterialApp(
-          theme: baseLightTheme.copyWith(
-            textTheme: GoogleFonts.interTextTheme(baseLightTheme.textTheme),
-          ),
-          darkTheme: baseDarkTheme.copyWith(
-            textTheme: GoogleFonts.interTextTheme(baseDarkTheme.textTheme),
-          ),
+          theme: baseLightTheme,
+          darkTheme: baseDarkTheme,
           home: const MyHomePage(title: 'Stavanger Symfonikor'),
           debugShowCheckedModeBanner: false,
         );
@@ -82,7 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _openScanner() {
-    HapticFeedback.lightImpact();
+    HapticFeedback.heavyImpact();
     // Show the multi-step modal
     showModalBottomSheet(
       showDragHandle: true,

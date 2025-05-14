@@ -1,4 +1,4 @@
-package com.example.choir
+package dev.arlyon.sskor
 
 import io.flutter.embedding.android.FlutterActivity
 
