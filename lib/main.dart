@@ -64,7 +64,7 @@ class MyApp extends StatelessWidget {
           ],
           supportedLocales: [
             Locale('en'), // English
-            Locale('no'),
+            Locale('nb'),
           ],
           debugShowCheckedModeBanner: false,
         );
@@ -173,12 +173,12 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
 
-    // return child;
+    return child;
 
-    return Localizations.override(
-      context: context,
-      locale: const Locale('no'),
-      child: child,
-    );
+    // return Localizations.override(
+    //   context: context,
+    //   locale: const Locale('nb'),
+    //   child: child,
+    // );
   }
 }
