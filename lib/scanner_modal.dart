@@ -1,8 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'database_helper.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'l10n/app_localizations.dart';
 
 // New Widget for the Multi-Step Modal
 class MultiStepModal extends StatefulWidget {
@@ -28,7 +29,9 @@ class _MultiStepModalState extends State<MultiStepModal> {
   NewOrExistingWork? _work;
   NewOrExistingUser? _user;
 
-  final MobileScannerController _scannerController = MobileScannerController();
+  final MobileScannerController _scannerController = MobileScannerController(
+    autoStart: true,
+  );
 
   Future<Map<String, dynamic>?>? _userFuture;
   Future<Map<String, dynamic>?>? _workFuture;
@@ -50,9 +53,9 @@ class _MultiStepModalState extends State<MultiStepModal> {
 
       var id = _currentStep + 1;
       if (_steps[id].$2) {
-        await _scannerController.start();
+        // await _scannerController.start();
       } else {
-        await _scannerController.stop();
+        // await _scannerController.stop();
       }
       setState(() {
         _currentStep = id;
@@ -68,9 +71,9 @@ class _MultiStepModalState extends State<MultiStepModal> {
       var id = _currentStep - 1;
 
       if (_steps[id].$2) {
-        await _scannerController.start();
+        // await _scannerController.start();
       } else {
-        await _scannerController.stop();
+        // await _scannerController.stop();
       }
 
       setState(() {
@@ -85,8 +88,24 @@ class _MultiStepModalState extends State<MultiStepModal> {
     if (code != null) {
       setState(() {
         if (_currentStep == 0) {
-          _work = NewOrExistingWork.existing(code);
-          _workFuture = DatabaseHelper.instance.getWorkById(code);
+          final parts = code.split(" ");
+          // if there is one part, it's the workId. if there are 2 or more,
+          // then the last is the instance
+          final workId;
+          final instance;
+          if (parts.length == 1) {
+            workId = parts.first;
+            instance = null;
+          } else {
+            // get all but the last item from the array
+            workId = parts.sublist(0, parts.length - 1).join(" ");
+            instance = int.parse(parts.last);
+          }
+
+          _work = NewOrExistingWork.existing(workId, instance);
+          // work_id and instance
+          print("Work ID: $workId");
+          _workFuture = DatabaseHelper.instance.getWorkById(workId, instance);
         } else if (_currentStep == 2) {
           _user = NewOrExistingUser.existing(code);
           _userFuture = DatabaseHelper.instance.getUserById(code);
@@ -124,8 +143,6 @@ class _MultiStepModalState extends State<MultiStepModal> {
                     child: MobileScanner(
                       controller: _scannerController,
                       onDetect: _handleBarcode,
-                      // Optional: Add overlay, customize scan window, etc.
-                      // scanWindow: Rect.fromCenter(center: Offset(size.width / 2, size.height / 2), width: 250, height: 250),
                     ),
                   ),
                 ),
@@ -162,7 +179,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                 });
               } else if (!snapshot.hasData || snapshot.data == null) {
                 _titleController.text = switch (_work) {
-                  ExistingWork(:final id) => id.split(" ").first,
+                  ExistingWork(:final id, :final instance) => id,
                   CreateWork(:final name) => name,
                   null => "",
                 };
@@ -184,9 +201,8 @@ class _MultiStepModalState extends State<MultiStepModal> {
                         _work = NewOrExistingWork.create(
                           _work!.id,
                           _titleController.text,
-                          _composerController
-                              .text, // Pass empty string if null/empty
-                          null, // Instance is null for now
+                          _composerController.text,
+                          _work!.instance,
                         );
                       });
                       _nextStep(); // Advance after successful validation and creation
@@ -198,43 +214,58 @@ class _MultiStepModalState extends State<MultiStepModal> {
                 final workData = snapshot.data!;
                 final title = workData['title'] ?? 'Unknown Title';
                 final composer = workData['composer'] ?? 'Unknown Composer';
-                body = Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.book,
-                          size: 50,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          title,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: theme.colorScheme.onSurface,
+                final userId = workData['user_id'];
+
+                if (userId != null) {
+                  // SET USER FUTURE AND MOVE TO STEP 4
+                  _user = NewOrExistingUser.existing(userId);
+                  _userFuture = DatabaseHelper.instance.getUserById(userId);
+                  // Action: Just advance to the next step
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    setState(() {
+                      _currentStep = 4;
+                    });
+                  });
+                  body = const SizedBox.shrink();
+                } else {
+                  body = Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.book,
+                            size: 50,
+                            color: theme.colorScheme.primary,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        Text(
-                          composer,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                          const SizedBox(height: 16),
+                          Text(
+                            title,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurface,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '(ID: ${_work?.maybeMap(existing: (e) => e.id, orElse: () => 'New')})', // Show the original scanned ID or 'New'
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.disabledColor,
+                          Text(
+                            composer,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Text(
+                            '${_work?.maybeMap(existing: (e) => e.id.toString() + " - " + e.instance.toString(), orElse: () => 'New')}', // Show the original scanned ID or 'New'
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.disabledColor,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
+                  );
+                }
                 // Action: Just advance to the next step
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   continueAction.value = _nextStep;
@@ -251,7 +282,6 @@ class _MultiStepModalState extends State<MultiStepModal> {
             ValueListenableBuilder(
               valueListenable: continueAction,
               builder: (context, value, child) {
-                print("render");
                 return TextButton(
                   onPressed: value,
                   child: Text(AppLocalizations.of(context)!.continueText),
@@ -281,7 +311,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                 });
               } else if (!snapshot.hasData || snapshot.data == null) {
                 _nameController.text = switch (_user) {
-                  ExistingUser(:final id) => id.split(" ").first,
+                  ExistingUser(:final id) => id,
                   CreateUser(:final name) => name,
                   null => "",
                 };
@@ -334,7 +364,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '(ID: ${userData["user_id"]})',
+                          '${userData["user_id"]}',
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.disabledColor,
                           ),
@@ -436,18 +466,31 @@ class _MultiStepModalState extends State<MultiStepModal> {
                 _ => "Unknown Work",
               };
 
+              final workInstance = switch (_work) {
+                ExistingWork(:final instance) => instance,
+                CreateWork(:final instance) => instance,
+                _ => null,
+              };
+
+              final workInstanceText = workInstance?.toString() ?? "??";
+
               final workComposer = switch (_work) {
                 ExistingWork() => workData?['composer'] as String?,
                 CreateWork(:final composer) => composer,
                 _ => null,
               };
 
+              final workTitleText = '$workTitle #$workInstanceText';
+
               final workDisplay =
                   workComposer?.isNotEmpty == true
-                      ? '$workTitle by $workComposer'
-                      : workTitle;
+                      ? '$workTitleText by $workComposer'
+                      : workTitleText;
 
-              final actionText = isReturning ? 'returning' : 'checking out';
+              final actionText =
+                  isReturning
+                      ? AppLocalizations.of(context)!.returning
+                      : AppLocalizations.of(context)!.checkingOut;
 
               return Center(
                 child: Padding(
@@ -476,7 +519,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            TextSpan(text: '\nis $actionText\n'),
+                            TextSpan(text: '\n$actionText\n'),
                             TextSpan(
                               text: workDisplay,
                               style: const TextStyle(
@@ -486,14 +529,18 @@ class _MultiStepModalState extends State<MultiStepModal> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '(Work ID: $_work, User ID: $_user)',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.disabledColor,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      ...(kReleaseMode
+                          ? []
+                          : [
+                            const SizedBox(height: 8),
+                            Text(
+                              '(Work ID: $_work, User ID: $_user)',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.disabledColor,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ]),
                     ],
                   ),
                 ),
@@ -585,11 +632,9 @@ class _MultiStepModalState extends State<MultiStepModal> {
 
   @override
   void dispose() {
-    // Ensure scanner is stopped and controller disposed
-    _scannerController.stop();
-    _scannerController.dispose();
     HapticFeedback.heavyImpact();
     super.dispose();
+    _scannerController.dispose();
   }
 
   @override
@@ -661,14 +706,6 @@ class _MultiStepModalState extends State<MultiStepModal> {
                 return null;
               },
             ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: composerController,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.composerOptional,
-                border: OutlineInputBorder(),
-              ),
-            ),
           ],
         ),
       ),
@@ -714,14 +751,6 @@ class _MultiStepModalState extends State<MultiStepModal> {
                 }
                 return null;
               },
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: emailController,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.emailOptional,
-                border: OutlineInputBorder(),
-              ),
             ),
           ],
         ),

@@ -36,6 +36,7 @@ CREATE VIEW IF NOT EXISTS checked_out_works AS
 SELECT
     c.checkout_id,
     c.checkout_timestamp,
+    c.instance,
     w.work_id,
     w.title AS work_title,
     w.composer,
@@ -54,6 +55,7 @@ CREATE VIEW IF NOT EXISTS completed_checkouts AS
 SELECT
     c.checkout_id,
     c.checkout_timestamp,
+    c.instance,
     c.return_timestamp,
     w.work_id,
     w.title as work_title,

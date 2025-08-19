@@ -1,19 +1,19 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import 'scanner_modal.dart';
 import 'user_scanner_modal.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:barcode/barcode.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'dart:convert';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import 'l10n/app_localizations.dart';
 import 'database_helper.dart';
 import 'main.dart';
+
+const double fontSize = 14.0;
 
 class CheckOutCard extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -24,22 +24,26 @@ class CheckOutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = item['work_title']?.toString() ?? 'Unknown Title';
+    final title = (item['work_title']?.toString() ?? 'Unknown Title');
     final user = item['user_name']?.toString() ?? 'Unknown User';
     final composer = item['composer']?.toString();
+    final instance = item['instance']?.toString();
     final checkoutTimestampStr = item['checkout_timestamp']?.toString();
     final returnTimestampStr = item['return_timestamp']?.toString();
+    final workId = item['work_id']?.toString();
+    final userId = item['user_id']?.toString();
+
     final relativeCheckoutTime = _formatRelativeTime(
       checkoutTimestampStr,
       context,
     );
     final relativeReturnTime = _formatRelativeTime(returnTimestampStr, context);
+
     return GestureDetector(
       onTap: () {
-        final workId = item['work_id']?.toString() ?? 'N/A';
-        final userId = item['user_id']?.toString() ?? 'N/A';
-        final userBarcodeData = userId;
-        final workBarcodeData = workId;
+        final userBarcodeData = userId ?? "N/A";
+        final workBarcodeData =
+            workId ?? "" + (instance != null ? " " + instance : "");
 
         final userBarcodeSvg = Barcode.code128().toSvg(
           userBarcodeData,
@@ -75,7 +79,7 @@ class CheckOutCard extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 10),
-                  Text(title),
+                  Text(title + " " + (item['instance']?.toString() ?? "")),
                   SvgPicture.string(
                     workBarcodeSvg,
                     colorFilter: ColorFilter.mode(
@@ -89,16 +93,26 @@ class CheckOutCard extends StatelessWidget {
           },
         );
       },
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-        elevation: isArchived ? 1.0 : 2.0,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(width: 1, color: Theme.of(context).splashColor),
+          ),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(10),
           child: Column(
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // instance 3 characters prefixed with #
+                  Text(
+                    '#${(instance ?? "NAN").toString().padLeft(3, '0')} ',
+                    style: GoogleFonts.ibmPlexMono(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -110,7 +124,7 @@ class CheckOutCard extends StatelessWidget {
                             title,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontSize: fontSize,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -118,31 +132,36 @@ class CheckOutCard extends StatelessWidget {
                             Text(
                               composer,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: fontSize,
                                 color: Theme.of(context).hintColor,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                         ],
                       ),
-                      Text(user, style: const TextStyle(fontSize: 14)),
+                      Text(user, style: const TextStyle(fontSize: fontSize)),
                     ],
                   ),
+                  Spacer(),
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.outbox_sharp,
-                            size: 12,
-                            color: Theme.of(context).hintColor,
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 3),
+                            child: Icon(
+                              Icons.outbox_sharp,
+                              size: fontSize,
+                              color: Theme.of(context).hintColor,
+                            ),
                           ),
                           SizedBox(width: 2),
                           Text(
                             relativeCheckoutTime,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: fontSize,
                               color: Theme.of(context).hintColor,
                             ),
                           ),
@@ -151,16 +170,19 @@ class CheckOutCard extends StatelessWidget {
                       if (isArchived)
                         Row(
                           children: [
-                            Icon(
-                              Icons.move_to_inbox_sharp,
-                              size: 12,
-                              color: Theme.of(context).hintColor,
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 3),
+                              child: Icon(
+                                Icons.move_to_inbox_sharp,
+                                size: fontSize,
+                                color: Theme.of(context).hintColor,
+                              ),
                             ),
                             SizedBox(width: 2),
                             Text(
                               relativeReturnTime,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: fontSize,
                                 color: Theme.of(context).hintColor,
                               ),
                             ),
@@ -183,7 +205,7 @@ class CheckOutCard extends StatelessWidget {
     }
     try {
       final dateTime = DateTime.parse(timestampStr).toLocal();
-      return timeago.format(dateTime);
+      return timeago.format(dateTime, locale: 'en_short');
     } catch (e) {
       print("Error parsing timestamp '$timestampStr': $e");
       return 'Invalid Date';
@@ -320,6 +342,8 @@ class _CheckedOutListState extends State<CheckedOutList> {
                     )
                     .toList();
 
+            final search = AppLocalizations.of(context)!.search;
+
             return Dialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.0),
@@ -334,7 +358,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
                     children: [
                       TextField(
                         decoration: InputDecoration(
-                          labelText: 'Search $filterType',
+                          labelText: '$search $filterType',
                           prefixIcon: const Icon(Icons.search),
                           filled: true,
                           border: OutlineInputBorder(
@@ -384,10 +408,12 @@ class _CheckedOutListState extends State<CheckedOutList> {
                             child: Text(AppLocalizations.of(context)!.apply),
                             onPressed: () {
                               setState(() {
-                                if (filterType == 'Person') {
+                                if (filterType ==
+                                    AppLocalizations.of(context)!.person) {
                                   _selectedPersons =
                                       tempSelected.cast<String>();
-                                } else if (filterType == 'Work Title') {
+                                } else if (filterType ==
+                                    AppLocalizations.of(context)!.workTitle) {
                                   _selectedWorkTitles =
                                       tempSelected.cast<String>();
                                 }
@@ -411,45 +437,14 @@ class _CheckedOutListState extends State<CheckedOutList> {
 
   Widget _buildFilterChips() {
     List<Widget> chips = [];
-
-    chips.add(
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: ActionChip(
-          shape: StadiumBorder(),
-          avatar: const Icon(Icons.person_add_alt_1, size: 18),
-          label: Text(AppLocalizations.of(context)!.person),
-          onPressed:
-              () => _showFilterDialog(
-                'Person',
-                _availablePersons,
-                _selectedPersons,
-              ),
-        ),
-      ),
-    );
-    chips.add(
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: ActionChip(
-          shape: StadiumBorder(),
-          avatar: const Icon(Icons.music_note, size: 18),
-          label: Text(AppLocalizations.of(context)!.workTitle),
-          onPressed:
-              () => _showFilterDialog(
-                'Work Title',
-                _availableWorkTitles,
-                _selectedWorkTitles,
-              ),
-        ),
-      ),
-    );
+    final theme = Theme.of(context);
 
     chips.add(
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: FilterChip(
           label: Text(AppLocalizations.of(context)!.archived),
+          labelPadding: EdgeInsets.only(top: 3, left: 6, right: 6),
           showCheckmark: false,
           selected: _showArchive,
           onSelected: (bool selected) {
@@ -475,49 +470,92 @@ class _CheckedOutListState extends State<CheckedOutList> {
     chips.add(
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: GestureDetector(
-          onLongPress: () {
-            showModalBottomSheet(
-              context: context,
-              builder: (context) => UserScannerModal(),
-            );
-          },
-          child: FilterChip(
-            label: Text(AppLocalizations.of(context)!.me),
-            showCheckmark: false,
-            selected: _selectedPersons.isNotEmpty,
-            onSelected: (bool selected) async {
-              HapticFeedback.mediumImpact();
-              const storage = FlutterSecureStorage();
-              final userId = await storage.read(key: 'user_id');
-              setState(() {
-                _selectedPersons.clear();
-                if (selected && userId != null) {
-                  _selectedPersons.add(userId);
-                } else if (userId == null) {
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (context) => UserScannerModal(),
-                  );
-                  return;
-                }
-                _applyFilters();
-              });
-            },
-            avatar: Icon(
-              Icons.face,
-              color:
-                  _selectedPersons.isNotEmpty
-                      ? Theme.of(context).colorScheme.onSecondaryContainer
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            shape: StadiumBorder(),
-            selectedColor: Theme.of(context).colorScheme.secondaryContainer,
-            checkmarkColor: Theme.of(context).colorScheme.onSecondaryContainer,
-          ),
+        child: ActionChip(
+          shape: StadiumBorder(),
+          avatar: const Icon(Icons.person_add_alt_1, size: 18),
+          label: Text(AppLocalizations.of(context)!.person),
+          labelPadding: EdgeInsets.only(top: 3, left: 6, right: 6),
+          backgroundColor:
+              _selectedPersons.isNotEmpty
+                  ? theme.colorScheme.secondaryContainer
+                  : null,
+          onPressed:
+              () => _showFilterDialog(
+                AppLocalizations.of(context)!.person,
+                _availablePersons,
+                _selectedPersons,
+              ),
         ),
       ),
     );
+    chips.add(
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: ActionChip(
+          shape: StadiumBorder(),
+          avatar: const Icon(Icons.music_note, size: 18),
+          label: Text(AppLocalizations.of(context)!.workTitle),
+          labelPadding: EdgeInsets.only(top: 3, left: 6, right: 6),
+          backgroundColor:
+              _selectedWorkTitles.isNotEmpty
+                  ? theme.colorScheme.secondaryContainer
+                  : null,
+          onPressed:
+              () => _showFilterDialog(
+                AppLocalizations.of(context)!.workTitle,
+                _availableWorkTitles,
+                _selectedWorkTitles,
+              ),
+        ),
+      ),
+    );
+
+    // chips.add(
+    //   Padding(
+    //     padding: const EdgeInsets.symmetric(horizontal: 4.0),
+    //     child: GestureDetector(
+    //       onLongPress: () {
+    //         showModalBottomSheet(
+    //           context: context,
+    //           builder: (context) => UserScannerModal(),
+    //         );
+    //       },
+    //       child: FilterChip(
+    //         label: Text(AppLocalizations.of(context)!.me),
+    //         showCheckmark: false,
+    //         selected: _selectedPersons.isNotEmpty,
+    //         onSelected: (bool selected) async {
+    //           HapticFeedback.mediumImpact();
+    //           const storage = FlutterSecureStorage();
+    //           final userId = await storage.read(key: 'user_id');
+    //           setState(() {
+    //             _selectedPersons.clear();
+    //             if (selected && userId != null) {
+    //               _selectedPersons.add(userId);
+    //             } else if (userId == null) {
+    //               showModalBottomSheet(
+    //                 context: context,
+    //                 builder: (context) => UserScannerModal(),
+    //               );
+    //               return;
+    //             }
+    //             _applyFilters();
+    //           });
+    //         },
+    //         avatar: Icon(
+    //           Icons.face,
+    //           color:
+    //               _selectedPersons.isNotEmpty
+    //                   ? Theme.of(context).colorScheme.onSecondaryContainer
+    //                   : Theme.of(context).colorScheme.onSurfaceVariant,
+    //         ),
+    //         shape: StadiumBorder(),
+    //         selectedColor: Theme.of(context).colorScheme.secondaryContainer,
+    //         checkmarkColor: Theme.of(context).colorScheme.onSecondaryContainer,
+    //       ),
+    //     ),
+    //   ),
+    // );
 
     chips.addAll(
       _selectedPersons
@@ -528,6 +566,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
               child: Chip(
                 shape: StadiumBorder(),
                 label: Text(_availablePersons[person] ?? person),
+                labelPadding: EdgeInsets.only(top: 3, left: 6, right: 6),
                 onDeleted: () {
                   setState(() {
                     _selectedPersons.remove(person);
@@ -549,6 +588,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
               _availableWorkTitles[title] ?? title,
               overflow: TextOverflow.ellipsis,
             ),
+            labelPadding: EdgeInsets.only(top: 3, left: 6, right: 6),
             onDeleted: () {
               setState(() {
                 _selectedWorkTitles.remove(title);
@@ -562,8 +602,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
       child: Row(children: chips),
     );
   }

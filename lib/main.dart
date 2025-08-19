@@ -1,11 +1,11 @@
-import 'package:choir/database_helper.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'database_helper.dart';
+import 'l10n/app_localizations.dart';
 import 'scanner_modal.dart';
 import 'table.dart';
 import 'util.dart';
@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           theme: baseLightTheme,
           darkTheme: baseDarkTheme,
-          home: const MyHomePage(title: 'Stavanger Symfonikor'),
+          home: const MyHomePage(title: 'SSKor Note App'),
           localizationsDelegates: [
             AppLocalizations.delegate, // Add this line
             GlobalMaterialLocalizations.delegate,

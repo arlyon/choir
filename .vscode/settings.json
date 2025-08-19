@@ -1,5 +1,5 @@
 {
-    "dart.flutterSdkPath": "/home/arlyon/.local/share/mise/installs/flutter/3.29.2-stable",
+    "dart.flutterSdkPath": "/home/arlyon/.local/share/mise/installs/flutter/3.29.3-stable",
     "debug.javascript.defaultRuntimeExecutable": {
         "pwa-node": "/home/arlyon/.local/share/mise/shims/node"
     },

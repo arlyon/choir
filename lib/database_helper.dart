@@ -9,8 +9,8 @@ import 'package:libsql_dart/libsql_dart.dart';
 import 'package:mutex/mutex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import 'l10n/app_localizations.dart';
 part 'database_helper.freezed.dart';
 
 class OnlineModel with ChangeNotifier {
@@ -218,13 +218,13 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> fetchCurrentItems() async {
     return await query(
-      'SELECT work_title, composer, user_name, user_id, work_id, checkout_timestamp FROM checked_out_works ORDER BY checkout_timestamp DESC',
+      'SELECT work_title, composer, user_name, user_id, work_id, checkout_timestamp, instance FROM checked_out_works ORDER BY checkout_timestamp DESC',
     );
   }
 
   Future<List<Map<String, dynamic>>> fetchArchiveItems() async {
     return await query(
-      'SELECT work_title, composer, user_name, user_id, work_id, checkout_timestamp, return_timestamp FROM completed_checkouts ORDER BY return_timestamp DESC',
+      'SELECT work_title, composer, user_name, user_id, work_id, checkout_timestamp, return_timestamp, instance FROM completed_checkouts ORDER BY return_timestamp DESC',
     );
   }
 
@@ -285,9 +285,11 @@ class DatabaseHelper {
       print("Checking out item: workId=$work.id, userId=$user.id");
 
       final id = await tx?.execute(
-        'INSERT INTO checkouts (work_id, user_id, checkout_timestamp, return_timestamp) VALUES (?, ?, ?, NULL)',
-        positional: [work.id, user.id, now],
+        'INSERT INTO checkouts (work_id, user_id, checkout_timestamp, return_timestamp, instance) VALUES (?, ?, ?, NULL, ?)',
+        positional: [work.id, user.id, now, work.instance],
       );
+
+      print("attempting commit");
 
       await tx?.commit();
 
@@ -297,10 +299,11 @@ class DatabaseHelper {
     }
   }
 
-  Future<Map<String, dynamic>?> getWorkById(String workId) async {
+  Future<Map<String, dynamic>?> getWorkById(String workId, int? instance) async {
+    print("work and instance $workId $instance");
     final results = await query(
-      'SELECT work_id, title, composer FROM works WHERE work_id = ?',
-      positional: [workId],
+      'SELECT co.work_id, title, composer, co.user_id FROM works left join checkouts co on co.instance = ? and co.work_id = works.work_id WHERE works.work_id = ? AND co.return_timestamp IS NULL',
+      positional: [instance, workId],
     );
     return results.isNotEmpty ? results.first : null;
   }
@@ -355,7 +358,7 @@ sealed class NewOrExistingUser with _$NewOrExistingUser {
 
 @freezed
 sealed class NewOrExistingWork with _$NewOrExistingWork {
-  const factory NewOrExistingWork.existing(String id) = ExistingWork;
+  const factory NewOrExistingWork.existing(String id, int? instance) = ExistingWork;
   const factory NewOrExistingWork.create(
     String id,
     String name,

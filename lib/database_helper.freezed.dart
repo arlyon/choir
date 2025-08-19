@@ -429,9 +429,10 @@ abstract class CreateUser implements NewOrExistingUser {
 /// @nodoc
 mixin _$NewOrExistingWork {
   String get id => throw _privateConstructorUsedError;
+  int? get instance => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String id) existing,
+    required TResult Function(String id, int? instance) existing,
     required TResult Function(
       String id,
       String name,
@@ -442,13 +443,13 @@ mixin _$NewOrExistingWork {
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String id)? existing,
+    TResult? Function(String id, int? instance)? existing,
     TResult? Function(String id, String name, String? composer, int? instance)?
     create,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String id)? existing,
+    TResult Function(String id, int? instance)? existing,
     TResult Function(String id, String name, String? composer, int? instance)?
     create,
     required TResult orElse(),
@@ -484,7 +485,7 @@ abstract class $NewOrExistingWorkCopyWith<$Res> {
     $Res Function(NewOrExistingWork) then,
   ) = _$NewOrExistingWorkCopyWithImpl<$Res, NewOrExistingWork>;
   @useResult
-  $Res call({String id});
+  $Res call({String id, int? instance});
 }
 
 /// @nodoc
@@ -501,7 +502,7 @@ class _$NewOrExistingWorkCopyWithImpl<$Res, $Val extends NewOrExistingWork>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? id = null}) {
+  $Res call({Object? id = null, Object? instance = freezed}) {
     return _then(
       _value.copyWith(
             id:
@@ -509,6 +510,11 @@ class _$NewOrExistingWorkCopyWithImpl<$Res, $Val extends NewOrExistingWork>
                     ? _value.id
                     : id // ignore: cast_nullable_to_non_nullable
                         as String,
+            instance:
+                freezed == instance
+                    ? _value.instance
+                    : instance // ignore: cast_nullable_to_non_nullable
+                        as int?,
           )
           as $Val,
     );
@@ -524,7 +530,7 @@ abstract class _$$ExistingWorkImplCopyWith<$Res>
   ) = __$$ExistingWorkImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id});
+  $Res call({String id, int? instance});
 }
 
 /// @nodoc
@@ -540,13 +546,17 @@ class __$$ExistingWorkImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? id = null}) {
+  $Res call({Object? id = null, Object? instance = freezed}) {
     return _then(
       _$ExistingWorkImpl(
         null == id
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
                 as String,
+        freezed == instance
+            ? _value.instance
+            : instance // ignore: cast_nullable_to_non_nullable
+                as int?,
       ),
     );
   }
@@ -555,14 +565,16 @@ class __$$ExistingWorkImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$ExistingWorkImpl with DiagnosticableTreeMixin implements ExistingWork {
-  const _$ExistingWorkImpl(this.id);
+  const _$ExistingWorkImpl(this.id, this.instance);
 
   @override
   final String id;
+  @override
+  final int? instance;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'NewOrExistingWork.existing(id: $id)';
+    return 'NewOrExistingWork.existing(id: $id, instance: $instance)';
   }
 
   @override
@@ -570,7 +582,8 @@ class _$ExistingWorkImpl with DiagnosticableTreeMixin implements ExistingWork {
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'NewOrExistingWork.existing'))
-      ..add(DiagnosticsProperty('id', id));
+      ..add(DiagnosticsProperty('id', id))
+      ..add(DiagnosticsProperty('instance', instance));
   }
 
   @override
@@ -578,11 +591,13 @@ class _$ExistingWorkImpl with DiagnosticableTreeMixin implements ExistingWork {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ExistingWorkImpl &&
-            (identical(other.id, id) || other.id == id));
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.instance, instance) ||
+                other.instance == instance));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, id);
+  int get hashCode => Object.hash(runtimeType, id, instance);
 
   /// Create a copy of NewOrExistingWork
   /// with the given fields replaced by the non-null parameter values.
@@ -595,7 +610,7 @@ class _$ExistingWorkImpl with DiagnosticableTreeMixin implements ExistingWork {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String id) existing,
+    required TResult Function(String id, int? instance) existing,
     required TResult Function(
       String id,
       String name,
@@ -604,29 +619,29 @@ class _$ExistingWorkImpl with DiagnosticableTreeMixin implements ExistingWork {
     )
     create,
   }) {
-    return existing(id);
+    return existing(id, instance);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String id)? existing,
+    TResult? Function(String id, int? instance)? existing,
     TResult? Function(String id, String name, String? composer, int? instance)?
     create,
   }) {
-    return existing?.call(id);
+    return existing?.call(id, instance);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String id)? existing,
+    TResult Function(String id, int? instance)? existing,
     TResult Function(String id, String name, String? composer, int? instance)?
     create,
     required TResult orElse(),
   }) {
     if (existing != null) {
-      return existing(id);
+      return existing(id, instance);
     }
     return orElse();
   }
@@ -664,10 +679,13 @@ class _$ExistingWorkImpl with DiagnosticableTreeMixin implements ExistingWork {
 }
 
 abstract class ExistingWork implements NewOrExistingWork {
-  const factory ExistingWork(final String id) = _$ExistingWorkImpl;
+  const factory ExistingWork(final String id, final int? instance) =
+      _$ExistingWorkImpl;
 
   @override
   String get id;
+  @override
+  int? get instance;
 
   /// Create a copy of NewOrExistingWork
   /// with the given fields replaced by the non-null parameter values.
@@ -788,7 +806,7 @@ class _$CreateWorkImpl with DiagnosticableTreeMixin implements CreateWork {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(String id) existing,
+    required TResult Function(String id, int? instance) existing,
     required TResult Function(
       String id,
       String name,
@@ -803,7 +821,7 @@ class _$CreateWorkImpl with DiagnosticableTreeMixin implements CreateWork {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String id)? existing,
+    TResult? Function(String id, int? instance)? existing,
     TResult? Function(String id, String name, String? composer, int? instance)?
     create,
   }) {
@@ -813,7 +831,7 @@ class _$CreateWorkImpl with DiagnosticableTreeMixin implements CreateWork {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String id)? existing,
+    TResult Function(String id, int? instance)? existing,
     TResult Function(String id, String name, String? composer, int? instance)?
     create,
     required TResult orElse(),
@@ -868,6 +886,7 @@ abstract class CreateWork implements NewOrExistingWork {
   String get id;
   String get name;
   String? get composer;
+  @override
   int? get instance;
 
   /// Create a copy of NewOrExistingWork
