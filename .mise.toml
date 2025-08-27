@@ -6,6 +6,11 @@ java = "23"
 rust = "latest"
 cocoapods = "latest"
 yq = "latest"
+fastlane = "2.228.0"
+ruby = "3.3.4"
+
+[plugins]
+fastlane = "git@github.com:mollyIV/asdf-fastlane.git"
 
 [env]
 TURSO_DATABASE_URL="libsql://fancy-terry-arlyon.aws-eu-west-1.turso.io"

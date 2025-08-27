@@ -270,14 +270,14 @@ class DatabaseHelper {
 
       if (user case CreateUser(:final id, :final name, :final email)) {
         await tx?.execute(
-          "insert into users (user_id, name, email) values (?, ?, ?)",
+          "insert or ignore into users (user_id, name, email) values (?, ?, ?)",
           positional: [id, name, email],
         );
       }
 
       if (work case CreateWork(:final id, :final name, :final composer)) {
         await tx?.execute(
-          "insert into works (work_id, title, composer) values (?, ?, ?)",
+          "insert or ignore into works (work_id, title, composer) values (?, ?, ?)",
           positional: [id, name, composer],
         );
       }
