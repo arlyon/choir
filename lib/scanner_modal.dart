@@ -628,8 +628,6 @@ class _MultiStepModalState extends State<MultiStepModal> {
     }
   }
 
-  void _openSearch() {}
-
   @override
   void dispose() {
     HapticFeedback.heavyImpact();

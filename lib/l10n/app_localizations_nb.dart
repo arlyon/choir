@@ -101,4 +101,7 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get search => 'Søk';
+
+  @override
+  String get returnItem => 'Returner';
 }

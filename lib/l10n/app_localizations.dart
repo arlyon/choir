@@ -277,6 +277,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search'**
   String get search;
+
+  /// No description provided for @returnItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Return'**
+  String get returnItem;
 }
 
 class _AppLocalizationsDelegate

@@ -18,26 +18,35 @@ const double fontSize = 14.0;
 class CheckOutCard extends StatelessWidget {
   final Map<String, dynamic> item;
   final bool isArchived;
+  final WriteModel writeModel;
 
-  const CheckOutCard({Key? key, required this.item, this.isArchived = false})
-    : super(key: key);
+  const CheckOutCard({
+    Key? key,
+    required this.item,
+    this.isArchived = false,
+    required this.writeModel,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final title = (item['work_title']?.toString() ?? 'Unknown Title');
     final user = item['user_name']?.toString() ?? 'Unknown User';
     final composer = item['composer']?.toString();
-    final instance = item['instance']?.toString();
     final checkoutTimestampStr = item['checkout_timestamp']?.toString();
     final returnTimestampStr = item['return_timestamp']?.toString();
-    final workId = item['work_id']?.toString();
-    final userId = item['user_id']?.toString();
+
+    final instance = item['instance'];
+    final workId = item['work_id'];
+    final userId = item['user_id'];
 
     final relativeCheckoutTime = _formatRelativeTime(
       checkoutTimestampStr,
       context,
     );
     final relativeReturnTime = _formatRelativeTime(returnTimestampStr, context);
+
+    final _user = NewOrExistingUser.existing(userId);
+    final _work = NewOrExistingWork.existing(workId, instance);
 
     return GestureDetector(
       onTap: () {
@@ -85,6 +94,35 @@ class CheckOutCard extends StatelessWidget {
                     colorFilter: ColorFilter.mode(
                       Theme.of(context).hintColor,
                       BlendMode.srcIn,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final (created, id) = await DatabaseHelper.instance
+                          .insertCheckout(_work, _user);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            created
+                                ? AppLocalizations.of(context)!.checkoutSuccess
+                                : AppLocalizations.of(context)!.returnSuccess,
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+
+                      writeModel.increment();
+                      Navigator.of(context).pop();
+                    },
+                    icon: Icon(Icons.arrow_upward),
+
+                    label: Text(AppLocalizations.of(context)!.returnItem),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).colorScheme.primaryFixed,
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onPrimaryFixed,
                     ),
                   ),
                 ],
@@ -656,7 +694,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
           SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
               final item = _filteredCurrentItems[index];
-              return CheckOutCard(item: item);
+              return CheckOutCard(item: item, writeModel: widget.writeModel);
             }, childCount: _filteredCurrentItems.length),
           )
         else
@@ -695,7 +733,11 @@ class _CheckedOutListState extends State<CheckedOutList> {
             SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final item = _archiveItems[index];
-                return CheckOutCard(item: item, isArchived: true);
+                return CheckOutCard(
+                  item: item,
+                  isArchived: true,
+                  writeModel: widget.writeModel,
+                );
               }, childCount: _archiveItems.length),
             )
           else

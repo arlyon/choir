@@ -28,5 +28,6 @@
     "pleaseEnterName": "Skriv inn et navn",
     "returning": "returnerer",
     "checkingOut": "låner ut",
-    "search": "Søk"
+    "search": "Søk",
+    "returnItem": "Returner"
 }

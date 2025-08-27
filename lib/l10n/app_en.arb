@@ -76,5 +76,6 @@
   "pleaseEnterName": "Please enter a name",
   "returning": "is returning",
   "checkingOut": "is checking out",
-  "search": "Search"
+  "search": "Search",
+  "returnItem": "Return"
 }
