@@ -39,6 +39,14 @@ Deploy to internal testing track
 
 Deploy to alpha track
 
+### android production
+
+```sh
+[bundle exec] fastlane android production
+```
+
+Deploy to production track
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

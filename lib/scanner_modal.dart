@@ -38,6 +38,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
   Future<bool>? _checkoutFuture;
 
   ValueNotifier<VoidCallback?> continueAction = ValueNotifier(null);
+  bool _isFinalizingCheckout = false;
 
   final _formKeyWork = GlobalKey<FormState>();
   final _titleController = TextEditingController();
@@ -552,10 +553,10 @@ class _MultiStepModalState extends State<MultiStepModal> {
             TextButton.icon(
               // Enable finalize only if both IDs are scanned
               onPressed:
-                  (_user != null && _work != null && true) ? _nextStep : null,
+                  (_user != null && _work != null && !_isFinalizingCheckout) ? _nextStep : null,
               label: Text(AppLocalizations.of(context)!.finalize),
               icon:
-                  false
+                  _isFinalizingCheckout
                       ? Container(
                         width: 24,
                         height: 24,
@@ -575,6 +576,10 @@ class _MultiStepModalState extends State<MultiStepModal> {
   Future<void> _finalizeCheckout() async {
     // Make async
     if (_work != null && _user != null) {
+      setState(() {
+        _isFinalizingCheckout = true;
+      });
+      
       print(
         "Attempting to finalize checkout for Work ID: $_work, User ID: $_user",
       );
@@ -605,6 +610,12 @@ class _MultiStepModalState extends State<MultiStepModal> {
           ),
         );
         rethrow;
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isFinalizingCheckout = false;
+          });
+        }
       }
       // DatabaseHelper.instance.insertCheckout(_workId!, int.parse(_userId!)); // Example call
     } else {

@@ -17,12 +17,17 @@ CREATE TABLE IF NOT EXISTS checkouts (
     checkout_id INTEGER PRIMARY KEY AUTOINCREMENT,
     work_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
-    instance INTEGER UNIQUE,
+    instance INTEGER NOT NULL,
     checkout_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     return_timestamp DATETIME, -- NULL indicates currently checked out
     FOREIGN KEY (work_id) REFERENCES works (work_id),
     FOREIGN KEY (user_id) REFERENCES users (user_id)
 );
+
+-- Unique index to ensure only one active checkout per work_id + instance
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_active_checkouts ON checkouts (work_id, instance)
+WHERE
+    return_timestamp IS NULL;
 
 -- Index for faster lookups of currently checked out items
 CREATE INDEX IF NOT EXISTS idx_current_checkouts ON checkouts (work_id)

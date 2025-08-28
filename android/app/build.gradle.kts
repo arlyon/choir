@@ -35,7 +35,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
-    
+
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String
@@ -48,6 +48,12 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true // Shrinks unused code
+            isShrinkResources = true // Shrinks unused resources
+            proguardFiles(
+                // Default file with automatically generated optimization rules.
+                getDefaultProguardFile("proguard-android-optimize.txt")
+            )
         }
     }
 }
