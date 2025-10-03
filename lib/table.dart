@@ -52,7 +52,7 @@ class CheckOutCard extends StatelessWidget {
       onTap: () {
         final userBarcodeData = userId ?? "N/A";
         final workBarcodeData =
-            workId ?? "" + (instance != null ? " " + instance : "");
+            (workId ?? "") + (instance != null ? " " + instance.toString() : "");
 
         final userBarcodeSvg = Barcode.code128().toSvg(
           userBarcodeData,
@@ -267,6 +267,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
   List<Map<String, dynamic>> _currentItems = [];
   List<Map<String, dynamic>> _filteredCurrentItems = [];
   List<Map<String, dynamic>> _archiveItems = [];
+  List<Map<String, dynamic>> _filteredArchiveItems = [];
   Set<String> _selectedPersons = {};
   String? _currentUserId;
   Set<String> _selectedWorkTitles = {};
@@ -343,9 +344,20 @@ class _CheckedOutListState extends State<CheckedOutList> {
     setState(() {
       if (_selectedPersons.isEmpty && _selectedWorkTitles.isEmpty) {
         _filteredCurrentItems = List.from(_currentItems);
+        _filteredArchiveItems = List.from(_archiveItems);
       } else {
         _filteredCurrentItems =
             _currentItems.where((item) {
+              final personMatch =
+                  _selectedPersons.isEmpty ||
+                  (_selectedPersons.contains(item['user_id'].toString()));
+              final titleMatch =
+                  _selectedWorkTitles.isEmpty ||
+                  (_selectedWorkTitles.contains(item['work_id'].toString()));
+              return personMatch && titleMatch;
+            }).toList();
+        _filteredArchiveItems =
+            _archiveItems.where((item) {
               final personMatch =
                   _selectedPersons.isEmpty ||
                   (_selectedPersons.contains(item['user_id'].toString()));
@@ -720,7 +732,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
               child: Text(
                 AppLocalizations.of(
                   context,
-                )!.archivedItems(_archiveItems.length),
+                )!.archivedItems(_filteredArchiveItems.length),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -729,16 +741,16 @@ class _CheckedOutListState extends State<CheckedOutList> {
               ),
             ),
           ),
-          if (_archiveItems.isNotEmpty)
+          if (_filteredArchiveItems.isNotEmpty)
             SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
-                final item = _archiveItems[index];
+                final item = _filteredArchiveItems[index];
                 return CheckOutCard(
                   item: item,
                   isArchived: true,
                   writeModel: widget.writeModel,
                 );
-              }, childCount: _archiveItems.length),
+              }, childCount: _filteredArchiveItems.length),
             )
           else
             SliverToBoxAdapter(

@@ -92,20 +92,27 @@ class _MultiStepModalState extends State<MultiStepModal> {
           final parts = code.split(" ");
           // if there is one part, it's the workId. if there are 2 or more,
           // then the last is the instance
-          final workId;
-          final instance;
+          String workId;
+          int? instance;
           if (parts.length == 1) {
             workId = parts.first;
             instance = null;
           } else {
             // get all but the last item from the array
             workId = parts.sublist(0, parts.length - 1).join(" ");
-            instance = int.parse(parts.last);
+            try {
+              instance = int.parse(parts.last);
+            } catch (e) {
+              print("Error parsing instance '${parts.last}': $e");
+              // If parsing fails, treat the whole code as workId
+              workId = code;
+              instance = null;
+            }
           }
 
           _work = NewOrExistingWork.existing(workId, instance);
           // work_id and instance
-          print("Work ID: $workId");
+          print("Work ID: $workId, Instance: $instance");
           _workFuture = DatabaseHelper.instance.getWorkById(workId, instance);
         } else if (_currentStep == 2) {
           _user = NewOrExistingUser.existing(code);
@@ -116,6 +123,125 @@ class _MultiStepModalState extends State<MultiStepModal> {
         await _nextStep(); // Move to next step
       }
     }
+  }
+
+  void _openManualInput() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final TextEditingController workIdController = TextEditingController();
+        final TextEditingController instanceController = TextEditingController();
+        final TextEditingController userIdController = TextEditingController();
+
+        return AlertDialog(
+          title: Text(_currentStep == 0 ? 'Enter Work Details' : 'Enter User ID'),
+          content: _currentStep == 0
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: workIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'Work ID',
+                      hintText: 'e.g. WORK123',
+                    ),
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: instanceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Instance Number',
+                      hintText: 'e.g. 1',
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+              )
+            : TextField(
+                controller: userIdController,
+                decoration: const InputDecoration(
+                  labelText: 'User ID',
+                  hintText: 'e.g. USER123',
+                ),
+                autofocus: true,
+              ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (_currentStep == 0) {
+                  final workId = workIdController.text.trim();
+                  final instanceText = instanceController.text.trim();
+
+                  if (workId.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Work ID is required'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (instanceText.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Instance number is required'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                    return;
+                  }
+
+                  int? instance;
+                  try {
+                    instance = int.parse(instanceText);
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Instance number must be a valid number'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                    return;
+                  }
+
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _work = NewOrExistingWork.existing(workId, instance);
+                    _workFuture = DatabaseHelper.instance.getWorkById(workId, instance);
+                  });
+                  _nextStep();
+                } else if (_currentStep == 2) {
+                  final userId = userIdController.text.trim();
+                  if (userId.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('User ID is required'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                    return;
+                  }
+
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _user = NewOrExistingUser.existing(userId);
+                    _userFuture = DatabaseHelper.instance.getUserById(userId);
+                  });
+                  _nextStep();
+                }
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   (Widget, List<Widget>) _buildStepContent(int stepIndex) {
@@ -151,8 +277,10 @@ class _MultiStepModalState extends State<MultiStepModal> {
             ],
           ),
           [
-            SizedBox.shrink(),
-            // TextButton(onPressed: _openSearch, child: const Text("Search")),
+            TextButton(
+              onPressed: _openManualInput,
+              child: const Text("Manual Input"),
+            ),
             TextButton(
               onPressed: null,
               child: Text(AppLocalizations.of(context)!.continueText),
@@ -411,10 +539,11 @@ class _MultiStepModalState extends State<MultiStepModal> {
             [SizedBox.shrink()],
           );
         } else {
-          if (_work case ExistingWork(id: final workId)) {
+          if (_work case ExistingWork(id: final workId, instance: final instanceId)) {
             if (_user case ExistingUser(id: final userId)) {
               _checkoutFuture = DatabaseHelper.instance.checkExistingCheckout(
                 workId,
+                instanceId,
                 userId,
               );
             } else {
@@ -439,7 +568,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Text(
-                      AppLocalizations.of(context)!.errorLoadingSummary,
+                      snapshot.error?.toString() ?? "",
                       style: TextStyle(color: theme.colorScheme.error),
                       textAlign: TextAlign.center,
                     ),
@@ -579,7 +708,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
       setState(() {
         _isFinalizingCheckout = true;
       });
-      
+
       print(
         "Attempting to finalize checkout for Work ID: $_work, User ID: $_user",
       );

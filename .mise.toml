@@ -9,9 +9,24 @@ yq = "latest"
 fastlane = "2.228.0"
 ruby = "3.3.4"
 
-[plugins]
+[alias]
 fastlane = "git@github.com:mollyIV/asdf-fastlane.git"
 
 [env]
 TURSO_DATABASE_URL="libsql://fancy-terry-arlyon.aws-eu-west-1.turso.io"
 TURSO_AUTH_TOKEN="eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NDQzNTc4MzAsImlkIjoiZjQ1MjdjNDYtOWYzMC00OTIxLWI1M2EtOGZiNjFlMDE2NzA0IiwicmlkIjoiZmY2ZmJlNTktZDNjMC00MzU0LWJjYTQtNzg5OTRmOGM3NzlmIn0.qh_31TEWOVikVyvdKFWlMQZoXKL-OmFp1ETWZGaDplgKgLx9XUafpv9icWVoxHJT4Q9Yih82bRBiEhbGtMKmCg"
+
+[tasks.sdkmanager]
+run = [
+    "sdkmanager 'ndk;28.2.13676358'",
+    "sdkmanager 'platforms;android-36'",
+    "sdkmanager 'cmdline-tools;latest'",
+    "sdkmanager 'platform-tools'",
+    "sdkmanager 'build-tools;36.0.0'",
+]
+
+[tasks.release]
+run = [
+    "flutter build appbundle --dart-define-from-file=env-prod.json --release",
+    "cd android && fastlane deploy"
+]

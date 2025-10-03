@@ -20,9 +20,9 @@ samples, guidance on mobile development, and a full API reference.
 You need some stuff from sdkmanager:
 
 ```bash
-sdkmanager --package_file=sdkmanager
 sdkmanager 'ndk;28.2.13676358'
 sdkmanager 'platforms;android-36'
 sdkmanager 'cmdline-tools;latest'
+sdkmanager 'platform-tools'
 sdkmanager 'build-tools;36.0.0'
 ```

@@ -97,7 +97,7 @@ class AppLocalizationsNb extends AppLocalizations {
   String get returning => 'returnerer';
 
   @override
-  String get checkingOut => 'låner ut';
+  String get checkingOut => 'låner';
 
   @override
   String get search => 'Søk';

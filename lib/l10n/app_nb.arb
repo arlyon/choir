@@ -27,7 +27,7 @@
     "name": "Navn",
     "pleaseEnterName": "Skriv inn et navn",
     "returning": "returnerer",
-    "checkingOut": "låner ut",
+    "checkingOut": "låner",
     "search": "Søk",
     "returnItem": "Returner"
 }

@@ -228,6 +228,18 @@ class DatabaseHelper {
     );
   }
 
+  Future<List<Map<String, dynamic>>> fetchAllWorks() async {
+    return await query(
+      'SELECT work_id, title, composer FROM works ORDER BY title',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> fetchAllUsers() async {
+    return await query(
+      'SELECT user_id FROM users ORDER BY user_id',
+    );
+  }
+
   // --- Existing Methods Adapted ---
 
   Future<(bool, int)> insertCheckout(
@@ -302,7 +314,7 @@ class DatabaseHelper {
   Future<Map<String, dynamic>?> getWorkById(String workId, int? instance) async {
     print("work and instance $workId $instance");
     final results = await query(
-      'SELECT co.work_id, title, composer, co.user_id FROM works left join checkouts co on co.instance = ? and co.work_id = works.work_id WHERE works.work_id = ? AND co.return_timestamp IS NULL',
+      'SELECT works.work_id, title, composer, co.user_id FROM works LEFT JOIN checkouts co ON co.instance = ? AND co.work_id = works.work_id AND co.return_timestamp IS NULL WHERE works.work_id = ?',
       positional: [instance, workId],
     );
     return results.isNotEmpty ? results.first : null;
@@ -317,10 +329,10 @@ class DatabaseHelper {
     return results.isNotEmpty ? results.first : null;
   }
 
-  Future<bool> checkExistingCheckout(String workId, String userIdString) async {
+  Future<bool> checkExistingCheckout(String workId, int? instance, String userIdString) async {
     final results = await query(
-      'SELECT checkout_id FROM checkouts WHERE work_id = ? AND user_id = ? AND return_timestamp IS NULL',
-      positional: [workId, userIdString],
+      'SELECT checkout_id FROM checkouts WHERE work_id = ? AND instance = ? AND user_id = ? AND return_timestamp IS NULL',
+      positional: [workId, instance, userIdString],
     );
     return results.isNotEmpty;
   }
