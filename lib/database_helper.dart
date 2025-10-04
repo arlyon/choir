@@ -312,7 +312,21 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> fetchAllUsers() async {
     return await query(
-      'SELECT user_id FROM users ORDER BY user_id',
+      'SELECT user_id, name, email FROM users ORDER BY name',
+    );
+  }
+
+  Future<void> createUser(String userId, String name, String? email) async {
+    await execute(
+      'INSERT OR REPLACE INTO users (user_id, name, email) VALUES (?, ?, ?)',
+      positional: [userId, name, email],
+    );
+  }
+
+  Future<void> createWork(String workId, String title, String? composer) async {
+    await execute(
+      'INSERT OR REPLACE INTO works (work_id, title, composer) VALUES (?, ?, ?)',
+      positional: [workId, title, composer],
     );
   }
 

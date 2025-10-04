@@ -16,6 +16,8 @@ import 'database_helper.dart';
 import 'l10n/app_localizations.dart';
 import 'scanner_modal.dart';
 import 'table.dart';
+import 'users_view.dart';
+import 'works_view.dart';
 import 'util.dart';
 
 void main() {
@@ -91,12 +93,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late WriteModel _writeModel; // Renamed for clarity
+  late WriteModel _writeModel;
+  int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _writeModel = WriteModel(); // Initialize here
+    _writeModel = WriteModel();
   }
 
   @override
@@ -340,9 +343,234 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  void _addUser() {
+    final userIdController = TextEditingController();
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add New User'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: userIdController,
+              decoration: const InputDecoration(
+                labelText: 'User ID',
+                border: OutlineInputBorder(),
+                helperText: 'Unique identifier for the user',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Name (optional)',
+                border: OutlineInputBorder(),
+                helperText: 'If empty, will use User ID as name',
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email (optional)',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final userId = userIdController.text.trim();
+              if (userId.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('User ID is required')),
+                );
+                return;
+              }
+
+              Navigator.of(context).pop();
+
+              try {
+                final name = nameController.text.trim().isEmpty
+                    ? userId
+                    : nameController.text.trim();
+                final email = emailController.text.trim().isEmpty
+                    ? null
+                    : emailController.text.trim();
+
+                await DatabaseHelper.instance.createUser(userId, name, email);
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('User "$userId" created successfully')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to create user: $e'),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Add User'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addWork() {
+    final workIdController = TextEditingController();
+    final titleController = TextEditingController();
+    final composerController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add New Work'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: workIdController,
+              decoration: const InputDecoration(
+                labelText: 'Work ID',
+                border: OutlineInputBorder(),
+                helperText: 'Unique identifier for the work',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(
+                labelText: 'Title (optional)',
+                border: OutlineInputBorder(),
+                helperText: 'If empty, will use Work ID as title',
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: composerController,
+              decoration: const InputDecoration(
+                labelText: 'Composer (optional)',
+                border: OutlineInputBorder(),
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final workId = workIdController.text.trim();
+              if (workId.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Work ID is required')),
+                );
+                return;
+              }
+
+              Navigator.of(context).pop();
+
+              try {
+                final title = titleController.text.trim().isEmpty
+                    ? workId
+                    : titleController.text.trim();
+                final composer = composerController.text.trim().isEmpty
+                    ? null
+                    : composerController.text.trim();
+
+                await DatabaseHelper.instance.createWork(workId, title, composer);
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Work "$workId" created successfully')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to create work: $e'),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Add Work'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFabForCurrentTab() {
+    switch (_currentIndex) {
+      case 0: // Checkouts tab
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          key: const ValueKey<String>('fab_checkouts'),
+          children: [
+            FloatingActionButton(
+              heroTag: "barcode_sheet",
+              onPressed: _openBarcodeSheetGenerator,
+              tooltip: 'Generate Barcode Sheet',
+              child: const Icon(Icons.print),
+            ),
+            const SizedBox(height: 16),
+            FloatingActionButton(
+              heroTag: "scanner",
+              onPressed: _openScanner,
+              tooltip: 'Scan QR Code',
+              child: const Icon(Icons.qr_code),
+            ),
+          ],
+        );
+      case 1: // Users tab
+        return FloatingActionButton(
+          key: const ValueKey<String>('fab_users'),
+          heroTag: "add_user",
+          onPressed: _addUser,
+          tooltip: 'Add User',
+          child: const Icon(Icons.add),
+        );
+      case 2: // Works tab
+        return FloatingActionButton(
+          key: const ValueKey<String>('fab_works'),
+          heroTag: "add_work",
+          onPressed: _addWork,
+          tooltip: 'Add Work',
+          child: const Icon(Icons.add),
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    var child = Scaffold(
+    return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
@@ -370,57 +598,52 @@ class _MyHomePageState extends State<MyHomePage> {
             },
           ),
         ],
-        actionsPadding: EdgeInsets.all(16.0),
+        actionsPadding: const EdgeInsets.all(16.0),
       ),
-      body: CheckedOutList(writeModel: _writeModel),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          CheckedOutList(writeModel: _writeModel),
+          UsersView(writeModel: _writeModel),
+          WorksView(writeModel: _writeModel),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Checkouts',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: 'Users',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.library_music),
+            label: 'Works',
+          ),
+        ],
+      ),
       floatingActionButton: ListenableBuilder(
         listenable: DatabaseHelper.instance.onlineModel,
         builder: (BuildContext context, Widget? child) {
+          if (!DatabaseHelper.instance.onlineModel.isOnline) {
+            return const SizedBox.shrink();
+          }
+
           return AnimatedSwitcher(
-            duration: const Duration(
-              milliseconds: 300,
-            ), // Adjust duration as needed
-            transitionBuilder: (Widget child, Animation<double> animation) {
-              // Define the slide tween from bottom (Offset(0, 1)) to center (Offset.zero)
-              final offsetAnimation = Tween<Offset>(
-                begin: const Offset(2.0, 0.0), // Start below the screen
-                end: Offset.zero, // End at the original position
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOut),
-              ); // Apply easing
-              return SlideTransition(position: offsetAnimation, child: child);
-            },
-            child:
-                DatabaseHelper.instance.onlineModel.isOnline
-                    ? Column(
-                      mainAxisSize: MainAxisSize.min,
-                      key: const ValueKey<String>('fab_online'),
-                      children: [
-                        FloatingActionButton(
-                          heroTag: "barcode_sheet",
-                          onPressed: _openBarcodeSheetGenerator,
-                          tooltip: 'Generate Barcode Sheet',
-                          child: const Icon(Icons.print),
-                        ),
-                        const SizedBox(height: 16),
-                        FloatingActionButton(
-                          heroTag: "scanner",
-                          onPressed: _openScanner,
-                          tooltip: 'Scan QR Code',
-                          child: const Icon(Icons.qr_code),
-                        ),
-                      ],
-                    )
-                    : const SizedBox.shrink(
-                      // Use a different ValueKey for the 'offline' state
-                      key: ValueKey<String>('fab_offline'),
-                    ), // Use SizedBox.shrink() to represent the absence of the FAB
+            duration: const Duration(milliseconds: 300),
+            child: _buildFabForCurrentTab(),
           );
         },
       ),
     );
-
-    return child;
 
     // return Localizations.override(
     //   context: context,
