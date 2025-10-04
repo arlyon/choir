@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'password_dialog.dart';
 
 class AuthService {
   static const _storage = FlutterSecureStorage();
@@ -10,25 +13,23 @@ class AuthService {
 
   static String? _cachedToken;
   static String? _cachedPassword;
+  static Future<String?>? _authenticationFuture;
 
   // These are embedded in the app at build time via environment variables
-  static const String _distributedEncryptedToken = String.fromEnvironment("TURSO_AUTH_TOKEN_ENCRYPTED");
-  static const String _distributedSalt = String.fromEnvironment("TURSO_AUTH_TOKEN_SALT");
+  static const String _distributedEncryptedToken = String.fromEnvironment(
+    "TURSO_AUTH_TOKEN_ENCRYPTED",
+  );
+  static const String _distributedSalt = String.fromEnvironment(
+    "TURSO_AUTH_TOKEN_SALT",
+  );
 
-  static Future<bool> hasPasswordBeenVerified() async {
-    final verified = await _storage.read(key: _passwordVerifiedKey);
-    return verified == 'true';
-  }
-
-  static Future<void> markPasswordAsVerified() async {
-    await _storage.write(key: _passwordVerifiedKey, value: 'true');
-  }
-
-  static Future<String?> getStoredToken() async {
+  static Future<String?> getDecryptedToken(BuildContext context) async {
+    // Check cache first
     if (_cachedToken != null) {
       return _cachedToken;
     }
 
+    // Check stored token
     final storedToken = await _storage.read(key: _decryptedTokenKey);
     if (storedToken != null && _isValidJWT(storedToken)) {
       _cachedToken = storedToken;
@@ -38,16 +39,63 @@ class AuthService {
       await _storage.delete(key: _decryptedTokenKey);
     }
 
+    // If already authenticating, wait for the existing future
+    if (_authenticationFuture != null) {
+      return await _authenticationFuture!;
+    }
+
+    // Start new authentication process
+    _authenticationFuture = _promptForPasswordAndDecrypt(context);
+
+    try {
+      final result = await _authenticationFuture!;
+      return result;
+    } finally {
+      _authenticationFuture = null;
+    }
+  }
+
+  static Future<void> clearPasswordVerification() async {
+    await _storage.delete(key: _passwordVerifiedKey);
+    await _storage.delete(key: _decryptedTokenKey);
+    _cachedToken = null;
+    _cachedPassword = null;
+    _authenticationFuture = null;
+  }
+
+  static Future<String?> _promptForPasswordAndDecrypt(
+    BuildContext context,
+  ) async {
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const PasswordDialog(),
+    );
+
+    if (result != null) {
+      final password = result['password']!;
+      final token = await _decryptDistributedToken(password);
+
+      if (token != null) {
+        return token;
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid password. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return await _promptForPasswordAndDecrypt(context);
+      }
+    }
     return null;
   }
 
-  static Future<String?> decryptDistributedToken(String password) async {
+  static Future<String?> _decryptDistributedToken(String password) async {
     if (_cachedToken != null && _cachedPassword == password) {
       return _cachedToken;
-    }
-
-    if (_distributedEncryptedToken.isEmpty || _distributedSalt.isEmpty) {
-      return null; // Token not properly configured
     }
 
     try {
@@ -64,22 +112,11 @@ class AuthService {
       _cachedToken = token;
       _cachedPassword = password;
       await _storage.write(key: _decryptedTokenKey, value: token);
-      await markPasswordAsVerified();
+      await _storage.write(key: _passwordVerifiedKey, value: 'true');
       return token;
     } catch (e) {
       return null;
     }
-  }
-
-  static Future<void> clearPasswordVerification() async {
-    await _storage.delete(key: _passwordVerifiedKey);
-    await _storage.delete(key: _decryptedTokenKey);
-    _cachedToken = null;
-    _cachedPassword = null;
-  }
-
-  static String? getCachedToken() {
-    return _cachedToken;
   }
 
   static bool _isValidJWT(String token) {

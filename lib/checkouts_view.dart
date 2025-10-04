@@ -50,7 +50,8 @@ class CheckOutCard extends StatelessWidget {
       onTap: () {
         final userBarcodeData = userId ?? "N/A";
         final workBarcodeData =
-            (workId ?? "") + (instance != null ? " " + instance.toString() : "");
+            (workId ?? "") +
+            (instance != null ? " " + instance.toString() : "");
 
         final userBarcodeSvg = Barcode.code128().toSvg(
           userBarcodeData,
@@ -293,12 +294,6 @@ class _CheckedOutListState extends State<CheckedOutList> {
     if (!mounted) return;
 
     try {
-      print("refreshing data");
-      await DatabaseHelper.instance.initialize();
-      if (!await DatabaseHelper.instance.tryGoOnline(sync)) {
-        throw Exception("Failed to connect to database.");
-      }
-
       final data = await Future.wait([
         DatabaseHelper.instance.fetchCurrentItems(),
         DatabaseHelper.instance.fetchArchiveItems(),

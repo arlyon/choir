@@ -12,7 +12,6 @@ import 'package:sqflite/sqflite.dart';
 
 import 'auth_service.dart';
 import 'l10n/app_localizations.dart';
-import 'password_dialog.dart';
 part 'database_helper.freezed.dart';
 
 class OnlineModel with ChangeNotifier {
@@ -45,13 +44,18 @@ class OnlineModel with ChangeNotifier {
     _isOnline = false;
     notifyListeners();
   }
+
+  void setOnlineQuietly() {
+    _isOnline = true;
+    notifyListeners();
+  }
 }
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   DatabaseHelper._init();
 
-  bool _isConnecting = false;
+  Future<bool>? _connectionFuture;
 
   LibsqlClient? _onlineClient;
   Database? _offlineClient;
@@ -63,11 +67,9 @@ class DatabaseHelper {
   OnlineModel get onlineModel => _onlineModel;
 
   static const String _syncUrl = String.fromEnvironment("TURSO_DATABASE_URL");
-  String? _authToken;
   static const Duration _retryInterval = Duration(seconds: 60);
 
   BuildContext? _context;
-  bool _isAuthenticating = false;
 
   void setContext(BuildContext context) {
     _context = context;
@@ -76,121 +78,47 @@ class DatabaseHelper {
   // init completes when the app is either online or offline
   // for the first time
   Future<void> initialize() async {
-    if (_initCompleter.isCompleted || _isConnecting) {
-      return _initCompleter.future;
-    }
-
-    await _setupAuthentication();
-    await tryGoOnline(true); // go online
-
     // Start connectivity listener
     Connectivity().onConnectivityChanged.listen(_handleConnectivityChange);
-
-    return _initCompleter.future;
-  }
-
-  Future<void> _setupAuthentication() async {
-    if (_syncUrl.isEmpty) {
-      _authToken = null;
-      return;
-    }
-
-    if (_isAuthenticating) {
-      return; // Prevent multiple authentication attempts
-    }
-
-    // First check if we have a stored token
-    final storedToken = await AuthService.getStoredToken();
-    if (storedToken != null) {
-      _authToken = storedToken;
-      return;
-    }
-
-    final hasPasswordBeenVerified = await AuthService.hasPasswordBeenVerified();
-
-    if (!hasPasswordBeenVerified) {
-      await _promptForPassword();
-    } else {
-      final cachedToken = AuthService.getCachedToken();
-      if (cachedToken != null) {
-        _authToken = cachedToken;
-      } else {
-        await _promptForPassword();
-      }
-    }
-  }
-
-  Future<void> _promptForPassword() async {
-    if (_context == null || _isAuthenticating) return;
-
-    _isAuthenticating = true;
-
-    try {
-      final result = await showDialog<Map<String, String>>(
-        context: _context!,
-        barrierDismissible: false,
-        builder: (context) => const PasswordDialog(),
-      );
-
-      if (result != null) {
-        final password = result['password']!;
-        final token = await AuthService.decryptDistributedToken(password);
-
-        if (token != null) {
-          _authToken = token;
-        } else {
-          if (_context!.mounted) {
-            ScaffoldMessenger.of(_context!).showSnackBar(
-              const SnackBar(
-                content: Text('Invalid password. Please try again.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          _isAuthenticating = false;
-          await _promptForPassword();
-          return;
-        }
-      }
-    } finally {
-      _isAuthenticating = false;
-    }
   }
 
   // Returns true if online, false if offline
   Future<bool> tryGoOnline(bool doSync) async {
-    _isConnecting = true;
+    // If already connecting, wait for the existing connection attempt
+    if (_connectionFuture != null) {
+      return await _connectionFuture!;
+    }
 
-    print("Attempting online connection...");
+    if (_onlineClient != null) {
+      return true;
+    }
+
+    // Start new connection attempt
+    _connectionFuture = _setupOnlineClient(doSync);
 
     try {
+      final result = await _connectionFuture!;
+      return result;
+    } finally {
+      _connectionFuture = null;
+    }
+  }
+
+  // perform a connection attempt
+  Future<bool> _setupOnlineClient(bool doSync) async {
+    try {
       // Dispose previous online client if exists
+      final authToken = await AuthService.getDecryptedToken(_context!);
+
       await _onlineClient?.dispose();
-      _onlineClient = null;
+      _onlineClient = LibsqlClient(_syncUrl, authToken: authToken);
 
-      _onlineClient = LibsqlClient(
-        _syncUrl,
-        authToken: _authToken,
-      );
-
+      // this doesn't actually do the connecting, it just configures the client
       await _onlineClient!.connect();
-
-      _stopRetryTimer();
-
-      if (!_initCompleter.isCompleted) {
-        _initCompleter.complete();
-      }
-
-      if (doSync) {
-        // start a sync in the background
-        sync().catchError((e) => print("Sync failed: $e"));
-      }
 
       return true;
     } catch (e) {
       return false;
-    } finally {
-      _isConnecting = false;
     }
   }
 
@@ -246,19 +174,15 @@ class DatabaseHelper {
     }
   }
 
-  // --- Data Access Methods ---
-
-  Future<void> sync() async {
-    await _initCompleter.future;
-  }
-
   // Generic Query Method
   Future<List<Map<String, dynamic>>> query(
     String sql, {
     List<Object?>? positional,
     Map<String, Object?>? named,
   }) async {
-    await _initCompleter.future; // Ensure initialization is complete
+    if (!await tryGoOnline(false)) {
+      throw Exception("Database not online");
+    }
 
     var resp =
         await _onlineClient?.query(sql, named: named, positional: positional) ??
@@ -275,7 +199,15 @@ class DatabaseHelper {
     List<Object?>? positional,
     Map<String, Object?>? named,
   }) async {
-    await _initCompleter.future;
+    try {
+      print("going online");
+      await tryGoOnline(false);
+    } catch (e) {
+      print("Database not online: $e");
+      return 0;
+    }
+
+    print("Executing SQL: $sql");
 
     var resp =
         await _onlineClient?.execute(
@@ -284,6 +216,8 @@ class DatabaseHelper {
           positional: positional,
         ) ??
         0;
+
+    print("Executed SQL: $sql");
 
     _onlineModel.online(_context);
 
@@ -311,9 +245,7 @@ class DatabaseHelper {
   }
 
   Future<List<Map<String, dynamic>>> fetchAllUsers() async {
-    return await query(
-      'SELECT user_id, name, email FROM users ORDER BY name',
-    );
+    return await query('SELECT user_id, name, email FROM users ORDER BY name');
   }
 
   Future<void> createUser(String userId, String name, String? email) async {
@@ -401,7 +333,10 @@ class DatabaseHelper {
     }
   }
 
-  Future<Map<String, dynamic>?> getWorkById(String workId, int? instance) async {
+  Future<Map<String, dynamic>?> getWorkById(
+    String workId,
+    int? instance,
+  ) async {
     print("work and instance $workId $instance");
     final results = await query(
       'SELECT works.work_id, title, composer, co.user_id FROM works LEFT JOIN checkouts co ON co.instance = ? AND co.work_id = works.work_id AND co.return_timestamp IS NULL WHERE works.work_id = ?',
@@ -419,7 +354,11 @@ class DatabaseHelper {
     return results.isNotEmpty ? results.first : null;
   }
 
-  Future<bool> checkExistingCheckout(String workId, int? instance, String userIdString) async {
+  Future<bool> checkExistingCheckout(
+    String workId,
+    int? instance,
+    String userIdString,
+  ) async {
     final results = await query(
       'SELECT checkout_id FROM checkouts WHERE work_id = ? AND instance = ? AND user_id = ? AND return_timestamp IS NULL',
       positional: [workId, instance, userIdString],
@@ -436,6 +375,7 @@ class DatabaseHelper {
     await _offlineClient?.close();
     _onlineClient = null;
     _offlineClient = null;
+    _connectionFuture = null;
     onlineModel.offline(null);
     print("DatabaseHelper disposed.");
   }
@@ -445,7 +385,6 @@ class DatabaseHelper {
 
   Future<void> clearAuthentication() async {
     await AuthService.clearPasswordVerification();
-    _authToken = null;
     await _onlineClient?.dispose();
     _onlineClient = null;
     _onlineModel.offline(null);
@@ -464,7 +403,8 @@ sealed class NewOrExistingUser with _$NewOrExistingUser {
 
 @freezed
 sealed class NewOrExistingWork with _$NewOrExistingWork {
-  const factory NewOrExistingWork.existing(String id, int? instance) = ExistingWork;
+  const factory NewOrExistingWork.existing(String id, int? instance) =
+      ExistingWork;
   const factory NewOrExistingWork.create(
     String id,
     String name,
