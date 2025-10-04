@@ -10,7 +10,9 @@ import 'package:mutex/mutex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'auth_service.dart';
 import 'l10n/app_localizations.dart';
+import 'password_dialog.dart';
 part 'database_helper.freezed.dart';
 
 class OnlineModel with ChangeNotifier {
@@ -61,10 +63,15 @@ class DatabaseHelper {
   OnlineModel get onlineModel => _onlineModel;
 
   static const String _syncUrl = String.fromEnvironment("TURSO_DATABASE_URL");
-  static const String _authToken = String.fromEnvironment("TURSO_AUTH_TOKEN");
+  String? _authToken;
   static const Duration _retryInterval = Duration(seconds: 60);
 
   BuildContext? _context;
+  bool _isAuthenticating = false;
+
+  void setContext(BuildContext context) {
+    _context = context;
+  }
 
   // init completes when the app is either online or offline
   // for the first time
@@ -73,12 +80,81 @@ class DatabaseHelper {
       return _initCompleter.future;
     }
 
+    await _setupAuthentication();
     await tryGoOnline(true); // go online
 
     // Start connectivity listener
     Connectivity().onConnectivityChanged.listen(_handleConnectivityChange);
 
     return _initCompleter.future;
+  }
+
+  Future<void> _setupAuthentication() async {
+    if (_syncUrl.isEmpty) {
+      _authToken = null;
+      return;
+    }
+
+    if (_isAuthenticating) {
+      return; // Prevent multiple authentication attempts
+    }
+
+    // First check if we have a stored token
+    final storedToken = await AuthService.getStoredToken();
+    if (storedToken != null) {
+      _authToken = storedToken;
+      return;
+    }
+
+    final hasPasswordBeenVerified = await AuthService.hasPasswordBeenVerified();
+
+    if (!hasPasswordBeenVerified) {
+      await _promptForPassword();
+    } else {
+      final cachedToken = AuthService.getCachedToken();
+      if (cachedToken != null) {
+        _authToken = cachedToken;
+      } else {
+        await _promptForPassword();
+      }
+    }
+  }
+
+  Future<void> _promptForPassword() async {
+    if (_context == null || _isAuthenticating) return;
+
+    _isAuthenticating = true;
+
+    try {
+      final result = await showDialog<Map<String, String>>(
+        context: _context!,
+        barrierDismissible: false,
+        builder: (context) => const PasswordDialog(),
+      );
+
+      if (result != null) {
+        final password = result['password']!;
+        final token = await AuthService.decryptDistributedToken(password);
+
+        if (token != null) {
+          _authToken = token;
+        } else {
+          if (_context!.mounted) {
+            ScaffoldMessenger.of(_context!).showSnackBar(
+              const SnackBar(
+                content: Text('Invalid password. Please try again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          _isAuthenticating = false;
+          await _promptForPassword();
+          return;
+        }
+      }
+    } finally {
+      _isAuthenticating = false;
+    }
   }
 
   // Returns true if online, false if offline
@@ -94,7 +170,7 @@ class DatabaseHelper {
 
       _onlineClient = LibsqlClient(
         _syncUrl,
-        authToken: _authToken.isNotEmpty ? _authToken : null,
+        authToken: _authToken,
       );
 
       await _onlineClient!.connect();
@@ -353,8 +429,12 @@ class DatabaseHelper {
   // --- Status ---
   bool get isCurrentlyOnline => onlineModel.isOnline;
 
-  void setContext(BuildContext context) {
-    _context = context;
+  Future<void> clearAuthentication() async {
+    await AuthService.clearPasswordVerification();
+    _authToken = null;
+    await _onlineClient?.dispose();
+    _onlineClient = null;
+    _onlineModel.offline(null);
   }
 }
 

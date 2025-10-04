@@ -99,6 +99,13 @@ class _MyHomePageState extends State<MyHomePage> {
     _writeModel = WriteModel(); // Initialize here
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    DatabaseHelper.instance.setContext(context);
+    DatabaseHelper.instance.initialize();
+  }
+
   void _openScanner() {
     HapticFeedback.heavyImpact();
     // Show the multi-step modal
