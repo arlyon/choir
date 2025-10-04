@@ -15,7 +15,7 @@ import 'package:path_provider/path_provider.dart';
 import 'database_helper.dart';
 import 'l10n/app_localizations.dart';
 import 'scanner_modal.dart';
-import 'table.dart';
+import 'checkouts_view.dart';
 import 'users_view.dart';
 import 'works_view.dart';
 import 'util.dart';
