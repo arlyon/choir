@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:barcode/barcode.dart' as bc;
 import 'dart:typed_data';
 import 'dart:io';
@@ -247,19 +248,44 @@ class _MyHomePageState extends State<MyHomePage> {
 
       final pdfBytes = await pdf.save();
 
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/$fileName');
-      await file.writeAsBytes(pdfBytes);
+      if (Platform.isLinux) {
+        // Use file save dialog on Linux since share_plus doesn't support it
+        String? outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: 'Save PDF',
+          fileName: fileName,
+          type: FileType.custom,
+          allowedExtensions: ['pdf'],
+        );
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: shareText,
-      );
+        if (outputFile != null) {
+          final file = File(outputFile);
+          await file.writeAsBytes(pdfBytes);
 
-      try {
-        await file.delete();
-      } catch (e) {
-        // Ignore cleanup errors
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('PDF saved to $outputFile'),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+              ),
+            );
+          }
+        }
+      } else {
+        // Use share_plus for other platforms
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/$fileName');
+        await file.writeAsBytes(pdfBytes);
+
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: shareText,
+        );
+
+        try {
+          await file.delete();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
       }
     } catch (e) {
       if (mounted) {
