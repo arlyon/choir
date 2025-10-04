@@ -15,18 +15,15 @@ class BarcodeGenerator {
   ) async {
     final workId = work['work_id'] as String;
     final title = work['title'] as String;
-    final composer = work['composer'] as String? ?? '';
 
     final barcodeData = List.generate(
       instanceCount,
       (index) => '$workId ${index + 1}',
     );
 
-    final workTitle = composer.isNotEmpty ? '$title - $composer' : title;
-
     await generateBarcodeListPdf(
       barcodeData: barcodeData,
-      title: workTitle,
+      title: null,
       fileName: '$workId.pdf',
       shareText: 'Barcode sheet for $title',
       context: context,
@@ -35,14 +32,15 @@ class BarcodeGenerator {
 
   static Future<void> generateBarcodeListPdf({
     required List<String> barcodeData,
-    required String title,
+    required String? title,
     required String fileName,
     required String shareText,
     required BuildContext context,
   }) async {
+    print(barcodeData.length);
     try {
       final pdf = pw.Document();
-      final itemsPerPage = 14;
+      final itemsPerPage = 33;
       final numPages = (barcodeData.length / itemsPerPage).ceil();
 
       for (int pageNum = 0; pageNum < numPages; pageNum++) {
@@ -55,45 +53,63 @@ class BarcodeGenerator {
         pdf.addPage(
           pw.Page(
             pageFormat: PdfPageFormat.a4,
-            margin: pw.EdgeInsets.all(20),
+            margin: pw.EdgeInsets.only(top: 8.8 * PdfPageFormat.mm),
             build: (context) {
               final widgets = <pw.Widget>[];
 
-              widgets.add(
-                pw.Column(
-                  children: [
-                    pw.Text(
-                      title,
-                      style: pw.TextStyle(
-                        fontSize: 24,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
-                    ),
-                    pw.SizedBox(height: 10),
-                    pw.Divider(),
-                    pw.SizedBox(height: 10),
-                  ],
-                ),
-              );
-
-              for (int i = startIndex; i < endIndex; i += 2) {
+              if (title != null) {
                 widgets.add(
-                  pw.Row(
+                  pw.Column(
                     children: [
-                      pw.Expanded(
-                        child: _buildSimpleBarcodeWidget(barcodeData[i]),
+                      pw.Text(
+                        title,
+                        style: pw.TextStyle(
+                          fontSize: 24,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
                       ),
-                      pw.SizedBox(width: 10),
-                      if (i + 1 < endIndex)
-                        pw.Expanded(
-                          child: _buildSimpleBarcodeWidget(barcodeData[i + 1]),
-                        )
-                      else
-                        pw.Expanded(child: pw.SizedBox()),
+                      pw.SizedBox(height: 10),
+                      pw.Divider(),
+                      pw.SizedBox(height: 10),
                     ],
                   ),
                 );
-                widgets.add(pw.SizedBox(height: 15));
+              }
+
+              for (int i = startIndex; i < endIndex; i += 3) {
+                widgets.add(
+                  pw.Row(
+                    children: [
+                      pw.SizedBox(
+                        width: 70 * PdfPageFormat.mm,
+                        height: 25.4 * PdfPageFormat.mm,
+                        child: _buildSimpleBarcodeWidget(barcodeData[i]),
+                      ),
+                      if (i + 1 < endIndex)
+                        pw.SizedBox(
+                          width: 70 * PdfPageFormat.mm,
+                          height: 25.4 * PdfPageFormat.mm,
+                          child: _buildSimpleBarcodeWidget(barcodeData[i + 1]),
+                        )
+                      else
+                        pw.SizedBox(
+                          width: 70 * PdfPageFormat.mm,
+                          height: 25.4 * PdfPageFormat.mm,
+                        ),
+                      if (i + 2 < endIndex)
+                        pw.SizedBox(
+                          width: 70 * PdfPageFormat.mm,
+                          height: 25.4 * PdfPageFormat.mm,
+                          child: _buildSimpleBarcodeWidget(barcodeData[i + 2]),
+                        )
+                      else
+                        pw.SizedBox(
+                          width: 70 * PdfPageFormat.mm,
+                          height: 25.4 * PdfPageFormat.mm,
+                        ),
+                    ],
+                  ),
+                );
               }
 
               return pw.Column(children: widgets);
@@ -156,17 +172,20 @@ class BarcodeGenerator {
     return pw.Column(
       children: [
         pw.Container(
-          height: 60,
+          height: 40,
           child: pw.BarcodeWidget(
             barcode: barcode,
             data: data,
-            width: 200,
-            height: 60,
+            width: 120,
+            height: 40,
             drawText: false,
           ),
         ),
         pw.SizedBox(height: 4),
-        pw.Text(data, style: pw.TextStyle(fontSize: 10)),
+        pw.Text(
+          data,
+          style: pw.TextStyle(fontSize: 8, font: pw.Font.courier()),
+        ),
       ],
     );
   }
@@ -179,7 +198,7 @@ class BarcodeGenerator {
         users.map((user) => user['user_id']?.toString() ?? '').toList();
     await generateBarcodeListPdf(
       barcodeData: userIds,
-      title: 'User IDs List',
+      title: null,
       fileName: 'users.pdf',
       shareText: 'User IDs list',
       context: context,

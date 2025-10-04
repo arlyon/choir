@@ -133,7 +133,13 @@ class _MyHomePageState extends State<MyHomePage> {
         builder:
             (context) => WorkSelectionModal(
               works: works,
-              onWorkSelected: (work, instanceCount) => BarcodeGenerator.generateBarcodeSheet(work, instanceCount, context),
+              onWorkSelected:
+                  (work, instanceCount) =>
+                      BarcodeGenerator.generateBarcodeSheet(
+                        work,
+                        instanceCount,
+                        context,
+                      ),
               onExportUsers: _exportUsersList,
             ),
       );
@@ -165,10 +171,6 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     }
   }
-
-
-
-
 
   void _addUser() {
     final userIdController = TextEditingController();
@@ -526,7 +528,7 @@ class WorkSelectionModal extends StatefulWidget {
 class _WorkSelectionModalState extends State<WorkSelectionModal> {
   String _searchQuery = '';
   List<Map<String, dynamic>> _filteredWorks = [];
-  int _instanceCount = 14; // Start with 14 instances (1 page)
+  int _instanceCount = 33; // Start with 33 instances (1 page)
 
   @override
   void initState() {
@@ -599,11 +601,11 @@ class _WorkSelectionModalState extends State<WorkSelectionModal> {
               children: [
                 IconButton(
                   onPressed:
-                      _instanceCount > 14
+                      _instanceCount > 33
                           ? () {
                             HapticFeedback.mediumImpact();
                             setState(() {
-                              _instanceCount -= 14;
+                              _instanceCount -= 33;
                             });
                           }
                           : null,
@@ -618,7 +620,7 @@ class _WorkSelectionModalState extends State<WorkSelectionModal> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Text(
-                      '${(_instanceCount / 14).ceil()} page${(_instanceCount / 14).ceil() != 1 ? 's' : ''}',
+                      '${(_instanceCount / 33).ceil()} page${(_instanceCount / 33).ceil() != 1 ? 's' : ''}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -628,7 +630,7 @@ class _WorkSelectionModalState extends State<WorkSelectionModal> {
                   onPressed: () {
                     HapticFeedback.mediumImpact();
                     setState(() {
-                      _instanceCount += 14;
+                      _instanceCount += 33;
                     });
                   },
                   icon: const Icon(Icons.add_circle),
