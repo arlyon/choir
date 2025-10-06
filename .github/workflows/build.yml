@@ -21,12 +21,12 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'oracle'
-          java-version: '17'
+          java-version: '23'
 
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.3'
+          flutter-version: '3.35.5'
           channel: 'stable'
 
       - name: Install Dependencies
@@ -68,7 +68,7 @@ jobs:
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.3'
+          flutter-version: '3.35.5'
           channel: 'stable'
 
       - name: Install Dependencies
@@ -98,7 +98,7 @@ jobs:
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.3'
+          flutter-version: '3.35.5'
           channel: 'stable'
 
       - name: Install Dependencies
@@ -134,7 +134,7 @@ jobs:
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.3'
+          flutter-version: '3.35.5'
           channel: 'stable'
 
       - name: Install Dependencies
