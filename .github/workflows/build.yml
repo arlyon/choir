@@ -32,6 +32,9 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Create Production Environment File
+        run: echo '${{ secrets.ENV_PROD_JSON }}' > env-prod.json
+
       - name: Decode Keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
@@ -44,10 +47,10 @@ jobs:
           echo "storeFile=./upload-keystore.jks" >> android/key.properties
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --dart-define-from-file=env-prod.json --release
 
       - name: Build App Bundle
-        run: flutter build appbundle --release
+        run: flutter build appbundle --dart-define-from-file=env-prod.json --release
 
       - name: Upload Android Artifacts
         uses: actions/upload-artifact@v4
@@ -74,8 +77,11 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Create Production Environment File
+        run: echo '${{ secrets.ENV_PROD_JSON }}' > env-prod.json
+
       - name: Build Windows
-        run: flutter build windows --release
+        run: flutter build windows --dart-define-from-file=env-prod.json --release
 
       - name: Archive Windows Build
         run: |
@@ -104,8 +110,11 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Create Production Environment File
+        run: echo '${{ secrets.ENV_PROD_JSON }}' > env-prod.json
+
       - name: Build macOS
-        run: flutter build macos --release
+        run: flutter build macos --dart-define-from-file=env-prod.json --release
 
       - name: Archive macOS Build
         run: |
@@ -140,8 +149,11 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Create Production Environment File
+        run: echo '${{ secrets.ENV_PROD_JSON }}' > env-prod.json
+
       - name: Build Linux
-        run: flutter build linux --release
+        run: flutter build linux --dart-define-from-file=env-prod.json --release
 
       - name: Archive Linux Build
         run: |
