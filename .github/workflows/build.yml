@@ -28,6 +28,7 @@ jobs:
         with:
           flutter-version: '3.35.5'
           channel: 'stable'
+          cache: true
 
       - name: Install Dependencies
         run: flutter pub get
@@ -73,6 +74,7 @@ jobs:
         with:
           flutter-version: '3.35.5'
           channel: 'stable'
+          cache: true
 
       - name: Install Dependencies
         run: flutter pub get
@@ -106,6 +108,7 @@ jobs:
         with:
           flutter-version: '3.35.5'
           channel: 'stable'
+          cache: true
 
       - name: Install Dependencies
         run: flutter pub get
@@ -145,6 +148,7 @@ jobs:
         with:
           flutter-version: '3.35.5'
           channel: 'stable'
+          cache: true
 
       - name: Install Dependencies
         run: flutter pub get
