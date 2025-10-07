@@ -55,10 +55,6 @@ class _PasswordDialogState extends State<PasswordDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
         FilledButton(
           onPressed: _isLoading ? null : _handleSubmit,
           child: _isLoading
