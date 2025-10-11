@@ -38,7 +38,6 @@ class BarcodeGenerator {
     required String shareText,
     required BuildContext context,
   }) async {
-    print(barcodeData.length);
     try {
       final pdf = pw.Document();
       final itemsPerPage = 33;
@@ -121,7 +120,7 @@ class BarcodeGenerator {
 
       final pdfBytes = await pdf.save();
 
-      if (Platform.isLinux) {
+      if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
         String? outputFile = await FilePicker.platform.saveFile(
           dialogTitle: 'Save PDF',
           fileName: fileName,
@@ -136,7 +135,9 @@ class BarcodeGenerator {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(AppLocalizations.of(context)!.pdfSavedTo(outputFile)),
+                content: Text(
+                  AppLocalizations.of(context)!.pdfSavedTo(outputFile),
+                ),
                 backgroundColor: Theme.of(context).colorScheme.primary,
               ),
             );
@@ -159,7 +160,9 @@ class BarcodeGenerator {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.failedToGeneratePdf(e.toString())),
+            content: Text(
+              AppLocalizations.of(context)!.failedToGeneratePdf(e.toString()),
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
