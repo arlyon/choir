@@ -283,6 +283,492 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Return'**
   String get returnItem;
+
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SSKor Note App'**
+  String get appTitle;
+
+  /// No description provided for @failedToRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to refresh data. Check connection or logs.'**
+  String get failedToRefresh;
+
+  /// No description provided for @failedToExportUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to export users: {error}'**
+  String failedToExportUsers(String error);
+
+  /// No description provided for @addNewUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New User'**
+  String get addNewUser;
+
+  /// No description provided for @userId.
+  ///
+  /// In en, this message translates to:
+  /// **'User ID'**
+  String get userId;
+
+  /// No description provided for @userIdHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Unique identifier for the user'**
+  String get userIdHelper;
+
+  /// No description provided for @userIdHelperMaxLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Unique identifier for the user (max 15 characters)'**
+  String get userIdHelperMaxLength;
+
+  /// No description provided for @nameOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Name (optional)'**
+  String get nameOptional;
+
+  /// No description provided for @nameHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'If empty, will use User ID as name'**
+  String get nameHelper;
+
+  /// No description provided for @userIdRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'User ID is required'**
+  String get userIdRequired;
+
+  /// No description provided for @userCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'User \"{userId}\" created successfully'**
+  String userCreatedSuccess(String userId);
+
+  /// No description provided for @failedToCreateUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create user: {error}'**
+  String failedToCreateUser(String error);
+
+  /// No description provided for @addUserButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add User'**
+  String get addUserButton;
+
+  /// No description provided for @addNewWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New Work'**
+  String get addNewWork;
+
+  /// No description provided for @workId.
+  ///
+  /// In en, this message translates to:
+  /// **'Work ID'**
+  String get workId;
+
+  /// No description provided for @workIdHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Unique identifier for the work'**
+  String get workIdHelper;
+
+  /// No description provided for @workIdHelperMaxLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Unique identifier for the work (max 15 characters)'**
+  String get workIdHelperMaxLength;
+
+  /// No description provided for @titleOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Title (optional)'**
+  String get titleOptional;
+
+  /// No description provided for @titleHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'If empty, will use Work ID as title'**
+  String get titleHelper;
+
+  /// No description provided for @workIdRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Work ID is required'**
+  String get workIdRequired;
+
+  /// No description provided for @workCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Work \"{workId}\" created successfully'**
+  String workCreatedSuccess(String workId);
+
+  /// No description provided for @failedToCreateWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create work: {error}'**
+  String failedToCreateWork(String error);
+
+  /// No description provided for @addWorkButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Work'**
+  String get addWorkButton;
+
+  /// No description provided for @scanQrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR Code'**
+  String get scanQrCode;
+
+  /// No description provided for @printUsersList.
+  ///
+  /// In en, this message translates to:
+  /// **'Print Users List'**
+  String get printUsersList;
+
+  /// No description provided for @addUserTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add User'**
+  String get addUserTooltip;
+
+  /// No description provided for @generateBarcodeSheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Barcode Sheet'**
+  String get generateBarcodeSheet;
+
+  /// No description provided for @addWorkTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Work'**
+  String get addWorkTooltip;
+
+  /// No description provided for @checkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkouts'**
+  String get checkouts;
+
+  /// No description provided for @users.
+  ///
+  /// In en, this message translates to:
+  /// **'Users'**
+  String get users;
+
+  /// No description provided for @works.
+  ///
+  /// In en, this message translates to:
+  /// **'Works'**
+  String get works;
+
+  /// No description provided for @searchWorks.
+  ///
+  /// In en, this message translates to:
+  /// **'Search works...'**
+  String get searchWorks;
+
+  /// No description provided for @instances.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 instance} other{{count} instances}}'**
+  String instances(int count);
+
+  /// No description provided for @pages.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 page} other{{count} pages}}'**
+  String pages(int count);
+
+  /// No description provided for @unknownTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Title'**
+  String get unknownTitle;
+
+  /// No description provided for @unknownUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown User'**
+  String get unknownUser;
+
+  /// No description provided for @unknownComposer.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Composer'**
+  String get unknownComposer;
+
+  /// No description provided for @unknownDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown date'**
+  String get unknownDate;
+
+  /// No description provided for @invalidDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid Date'**
+  String get invalidDate;
+
+  /// No description provided for @unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknown;
+
+  /// No description provided for @idLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'ID: {id}'**
+  String idLabel(String id);
+
+  /// No description provided for @emailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email: {email}'**
+  String emailLabel(String email);
+
+  /// No description provided for @composerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Composer: {composer}'**
+  String composerLabel(String composer);
+
+  /// No description provided for @deleteUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete User'**
+  String get deleteUser;
+
+  /// No description provided for @confirmDeleteUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{name}\"?'**
+  String confirmDeleteUser(String name);
+
+  /// No description provided for @userDeletionNotImplemented.
+  ///
+  /// In en, this message translates to:
+  /// **'User deletion not implemented yet'**
+  String get userDeletionNotImplemented;
+
+  /// No description provided for @failedToDeleteUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete user: {error}'**
+  String failedToDeleteUser(String error);
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @deleteWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Work'**
+  String get deleteWork;
+
+  /// No description provided for @confirmDeleteWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete \"{title}\"?'**
+  String confirmDeleteWork(String title);
+
+  /// No description provided for @workDeletionNotImplemented.
+  ///
+  /// In en, this message translates to:
+  /// **'Work deletion not implemented yet'**
+  String get workDeletionNotImplemented;
+
+  /// No description provided for @failedToDeleteWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete work: {error}'**
+  String failedToDeleteWork(String error);
+
+  /// No description provided for @barcodeForTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode for \"{title}\"'**
+  String barcodeForTitle(String title);
+
+  /// No description provided for @workIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Work ID: {workId}'**
+  String workIdLabel(String workId);
+
+  /// No description provided for @barcodeComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode generation feature coming soon!'**
+  String get barcodeComingSoon;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @enterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Password'**
+  String get enterPassword;
+
+  /// No description provided for @passwordPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password to access the application:'**
+  String get passwordPrompt;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @unlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get unlock;
+
+  /// No description provided for @passwordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Password cannot be empty'**
+  String get passwordRequired;
+
+  /// No description provided for @confirmMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Music'**
+  String get confirmMusic;
+
+  /// No description provided for @confirmPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Person'**
+  String get confirmPerson;
+
+  /// No description provided for @summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get summary;
+
+  /// No description provided for @enterWorkDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Work Details'**
+  String get enterWorkDetails;
+
+  /// No description provided for @enterUserId.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter User ID'**
+  String get enterUserId;
+
+  /// No description provided for @workIdExample.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. WORK123'**
+  String get workIdExample;
+
+  /// No description provided for @instanceNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Instance Number'**
+  String get instanceNumber;
+
+  /// No description provided for @instanceExample.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 1'**
+  String get instanceExample;
+
+  /// No description provided for @userIdExample.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. USER123'**
+  String get userIdExample;
+
+  /// No description provided for @instanceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Instance number is required'**
+  String get instanceRequired;
+
+  /// No description provided for @instanceInvalidNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Instance number must be a valid number'**
+  String get instanceInvalidNumber;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @manualInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Input'**
+  String get manualInput;
+
+  /// No description provided for @errorFetchingWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Error fetching work details: {error}'**
+  String errorFetchingWork(String error);
+
+  /// No description provided for @checkoutFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout failed: {error}'**
+  String checkoutFailed(String error);
+
+  /// No description provided for @title.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get title;
+
+  /// No description provided for @pleaseEnterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a title'**
+  String get pleaseEnterTitle;
+
+  /// No description provided for @scannedUserId.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned User ID: {userId}'**
+  String scannedUserId(String userId);
+
+  /// No description provided for @pdfSavedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF saved to {path}'**
+  String pdfSavedTo(String path);
+
+  /// No description provided for @failedToGeneratePdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to generate PDF: {error}'**
+  String failedToGeneratePdf(String error);
 }
 
 class _AppLocalizationsDelegate

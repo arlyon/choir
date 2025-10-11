@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
 import 'main.dart';
+import 'l10n/app_localizations.dart';
 
 class WorksView extends StatefulWidget {
   final WriteModel writeModel;
@@ -37,7 +38,7 @@ class _WorksViewState extends State<WorksView> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = "Failed to refresh data. Check connection or logs.";
+          _error = "failedToRefresh"; // Will be localized in build
         });
       }
     }
@@ -52,34 +53,35 @@ class _WorksViewState extends State<WorksView> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Add New Work'),
+            title: Text(AppLocalizations.of(context)!.addNewWork),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: workIdController,
-                  decoration: const InputDecoration(
-                    labelText: 'Work ID',
-                    border: OutlineInputBorder(),
-                    helperText: 'Unique identifier for the work',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.workId,
+                    border: const OutlineInputBorder(),
+                    helperText: AppLocalizations.of(context)!.workIdHelperMaxLength,
                   ),
+                  maxLength: 15,
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Title (optional)',
-                    border: OutlineInputBorder(),
-                    helperText: 'If empty, will use Work ID as title',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.titleOptional,
+                    border: const OutlineInputBorder(),
+                    helperText: AppLocalizations.of(context)!.titleHelper,
                   ),
                   textCapitalization: TextCapitalization.words,
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: composerController,
-                  decoration: const InputDecoration(
-                    labelText: 'Composer (optional)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.composerOptional,
+                    border: const OutlineInputBorder(),
                   ),
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -88,14 +90,14 @@ class _WorksViewState extends State<WorksView> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
+                child: Text(AppLocalizations.of(context)!.cancel),
               ),
               FilledButton(
                 onPressed: () async {
                   final workId = workIdController.text.trim();
                   if (workId.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Work ID is required')),
+                      SnackBar(content: Text(AppLocalizations.of(context)!.workIdRequired)),
                     );
                     return;
                   }
@@ -122,7 +124,7 @@ class _WorksViewState extends State<WorksView> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Work "$workId" created successfully'),
+                          content: Text(AppLocalizations.of(context)!.workCreatedSuccess(workId)),
                         ),
                       );
                     }
@@ -130,14 +132,14 @@ class _WorksViewState extends State<WorksView> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Failed to create work: $e'),
+                          content: Text(AppLocalizations.of(context)!.failedToCreateWork(e.toString())),
                           backgroundColor: Theme.of(context).colorScheme.error,
                         ),
                       );
                     }
                   }
                 },
-                child: const Text('Add Work'),
+                child: Text(AppLocalizations.of(context)!.addWorkButton),
               ),
             ],
           ),
@@ -159,7 +161,7 @@ class _WorksViewState extends State<WorksView> {
               padding: const EdgeInsets.all(16.0),
               child: Center(
                 child: Text(
-                  _error!,
+                  AppLocalizations.of(context)!.failedToRefresh,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
@@ -190,7 +192,8 @@ class WorkCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = work['title']?.toString() ?? 'Unknown';
+    final l10n = AppLocalizations.of(context)!;
+    final title = work['title']?.toString() ?? l10n.unknown;
     final composer = work['composer']?.toString();
     final workId = work['work_id']?.toString() ?? '';
 
@@ -208,9 +211,9 @@ class WorkCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('ID: $workId'),
+            Text(l10n.idLabel(workId)),
             if (composer != null && composer.isNotEmpty)
-              Text('Composer: $composer'),
+              Text(l10n.composerLabel(composer)),
           ],
         ),
         isThreeLine: composer != null && composer.isNotEmpty,
@@ -219,21 +222,22 @@ class WorkCard extends StatelessWidget {
   }
 
   void _showBarcodeDialog(BuildContext context, Map<String, dynamic> work) {
+    final l10n = AppLocalizations.of(context)!;
     final workId = work['work_id']?.toString() ?? '';
-    final title = work['title']?.toString() ?? 'Unknown';
+    final title = work['title']?.toString() ?? l10n.unknown;
 
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text('Barcode for "$title"'),
+            title: Text(l10n.barcodeForTitle(title)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Work ID: $workId'),
+                Text(l10n.workIdLabel(workId)),
                 const SizedBox(height: 16),
                 Text(
-                  'Barcode generation feature coming soon!',
+                  l10n.barcodeComingSoon,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
@@ -241,7 +245,7 @@ class WorkCard extends StatelessWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
+                child: Text(l10n.close),
               ),
             ],
           ),
@@ -253,18 +257,19 @@ class WorkCard extends StatelessWidget {
     Map<String, dynamic> work,
     VoidCallback onWorkUpdated,
   ) {
-    final title = work['title']?.toString() ?? 'this work';
+    final l10n = AppLocalizations.of(context)!;
+    final title = work['title']?.toString() ?? l10n.unknown;
 
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Delete Work'),
-            content: Text('Are you sure you want to delete "$title"?'),
+            title: Text(l10n.deleteWork),
+            content: Text(l10n.confirmDeleteWork(title)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
+                child: Text(l10n.cancel),
               ),
               FilledButton(
                 onPressed: () async {
@@ -273,14 +278,14 @@ class WorkCard extends StatelessWidget {
                   try {
                     // Note: You may want to add a deleteWork method to DatabaseHelper
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Work deletion not implemented yet'),
+                      SnackBar(
+                        content: Text(l10n.workDeletionNotImplemented),
                       ),
                     );
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Failed to delete work: $e'),
+                        content: Text(l10n.failedToDeleteWork(e.toString())),
                         backgroundColor: Theme.of(context).colorScheme.error,
                       ),
                     );
@@ -289,7 +294,7 @@ class WorkCard extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.error,
                 ),
-                child: const Text('Delete'),
+                child: Text(l10n.delete),
               ),
             ],
           ),

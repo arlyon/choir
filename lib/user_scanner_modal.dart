@@ -53,12 +53,12 @@ class _UserScannerModalState extends State<UserScannerModal> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Scanned User ID: $_scanResult'),
+                    Text(AppLocalizations.of(context)!.scannedUserId(_scanResult!)),
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: const Text('OK'),
+                      child: Text(AppLocalizations.of(context)!.ok),
                     ),
                   ],
                 ),

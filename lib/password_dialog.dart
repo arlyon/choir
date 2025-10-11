@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'l10n/app_localizations.dart';
 
 class PasswordDialog extends StatefulWidget {
   const PasswordDialog({
@@ -23,21 +24,21 @@ class _PasswordDialogState extends State<PasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Enter Password'),
+      title: Text(AppLocalizations.of(context)!.enterPassword),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Enter your password to access the application:',
+              AppLocalizations.of(context)!.passwordPrompt,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
               decoration: InputDecoration(
-                labelText: 'Password',
+                labelText: AppLocalizations.of(context)!.password,
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
@@ -63,7 +64,7 @@ class _PasswordDialogState extends State<PasswordDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Unlock'),
+              : Text(AppLocalizations.of(context)!.unlock),
         ),
       ],
     );
@@ -73,7 +74,7 @@ class _PasswordDialogState extends State<PasswordDialog> {
     final password = _passwordController.text;
 
     if (password.isEmpty) {
-      _showError('Password cannot be empty');
+      _showError(AppLocalizations.of(context)!.passwordRequired);
       return;
     }
 

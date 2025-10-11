@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
 import 'main.dart';
+import 'l10n/app_localizations.dart';
 
 class UsersView extends StatefulWidget {
   final WriteModel writeModel;
@@ -37,7 +38,7 @@ class _UsersViewState extends State<UsersView> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = "Failed to refresh data. Check connection or logs.";
+          _error = "failedToRefresh"; // Will be localized in build
         });
       }
     }
@@ -52,34 +53,35 @@ class _UsersViewState extends State<UsersView> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Add New User'),
+            title: Text(AppLocalizations.of(context)!.addNewUser),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: userIdController,
-                  decoration: const InputDecoration(
-                    labelText: 'User ID',
-                    border: OutlineInputBorder(),
-                    helperText: 'Unique identifier for the user',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.userId,
+                    border: const OutlineInputBorder(),
+                    helperText: AppLocalizations.of(context)!.userIdHelperMaxLength,
                   ),
+                  maxLength: 15,
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name (optional)',
-                    border: OutlineInputBorder(),
-                    helperText: 'If empty, will use User ID as name',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.nameOptional,
+                    border: const OutlineInputBorder(),
+                    helperText: AppLocalizations.of(context)!.nameHelper,
                   ),
                   textCapitalization: TextCapitalization.words,
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email (optional)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.emailOptional,
+                    border: const OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.emailAddress,
                 ),
@@ -88,14 +90,14 @@ class _UsersViewState extends State<UsersView> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
+                child: Text(AppLocalizations.of(context)!.cancel),
               ),
               FilledButton(
                 onPressed: () async {
                   final userId = userIdController.text.trim();
                   if (userId.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('User ID is required')),
+                      SnackBar(content: Text(AppLocalizations.of(context)!.userIdRequired)),
                     );
                     return;
                   }
@@ -122,7 +124,7 @@ class _UsersViewState extends State<UsersView> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('User "$userId" created successfully'),
+                          content: Text(AppLocalizations.of(context)!.userCreatedSuccess(userId)),
                         ),
                       );
                     }
@@ -130,14 +132,14 @@ class _UsersViewState extends State<UsersView> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Failed to create user: $e'),
+                          content: Text(AppLocalizations.of(context)!.failedToCreateUser(e.toString())),
                           backgroundColor: Theme.of(context).colorScheme.error,
                         ),
                       );
                     }
                   }
                 },
-                child: const Text('Add User'),
+                child: Text(AppLocalizations.of(context)!.addUserButton),
               ),
             ],
           ),
@@ -159,7 +161,7 @@ class _UsersViewState extends State<UsersView> {
               padding: const EdgeInsets.all(16.0),
               child: Center(
                 child: Text(
-                  _error!,
+                  AppLocalizations.of(context)!.failedToRefresh,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
@@ -190,7 +192,8 @@ class UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = user['name']?.toString() ?? 'Unknown';
+    final l10n = AppLocalizations.of(context)!;
+    final name = user['name']?.toString() ?? l10n.unknown;
     final email = user['email']?.toString();
     final userId = user['user_id']?.toString() ?? '';
 
@@ -207,8 +210,8 @@ class UserCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('ID: $userId'),
-            if (email != null && email.isNotEmpty) Text('Email: $email'),
+            Text(l10n.idLabel(userId)),
+            if (email != null && email.isNotEmpty) Text(l10n.emailLabel(email)),
           ],
         ),
         isThreeLine: email != null && email.isNotEmpty,
@@ -221,18 +224,19 @@ class UserCard extends StatelessWidget {
     Map<String, dynamic> user,
     VoidCallback onUserUpdated,
   ) {
-    final name = user['name']?.toString() ?? 'this user';
+    final l10n = AppLocalizations.of(context)!;
+    final name = user['name']?.toString() ?? l10n.unknown;
 
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Delete User'),
-            content: Text('Are you sure you want to delete "$name"?'),
+            title: Text(l10n.deleteUser),
+            content: Text(l10n.confirmDeleteUser(name)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
+                child: Text(l10n.cancel),
               ),
               FilledButton(
                 onPressed: () async {
@@ -241,14 +245,14 @@ class UserCard extends StatelessWidget {
                   try {
                     // Note: You may want to add a deleteUser method to DatabaseHelper
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('User deletion not implemented yet'),
+                      SnackBar(
+                        content: Text(l10n.userDeletionNotImplemented),
                       ),
                     );
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Failed to delete user: $e'),
+                        content: Text(l10n.failedToDeleteUser(e.toString())),
                         backgroundColor: Theme.of(context).colorScheme.error,
                       ),
                     );
@@ -257,7 +261,7 @@ class UserCard extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.error,
                 ),
-                child: const Text('Delete'),
+                child: Text(l10n.delete),
               ),
             ],
           ),

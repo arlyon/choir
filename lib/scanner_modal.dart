@@ -134,25 +134,26 @@ class _MultiStepModalState extends State<MultiStepModal> {
         final TextEditingController userIdController = TextEditingController();
 
         return AlertDialog(
-          title: Text(_currentStep == 0 ? 'Enter Work Details' : 'Enter User ID'),
+          title: Text(_currentStep == 0 ? AppLocalizations.of(context)!.enterWorkDetails : AppLocalizations.of(context)!.enterUserId),
           content: _currentStep == 0
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: workIdController,
-                    decoration: const InputDecoration(
-                      labelText: 'Work ID',
-                      hintText: 'e.g. WORK123',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.workId,
+                      hintText: AppLocalizations.of(context)!.workIdExample,
                     ),
                     autofocus: true,
+                    maxLength: 15,
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: instanceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Instance Number',
-                      hintText: 'e.g. 1',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.instanceNumber,
+                      hintText: AppLocalizations.of(context)!.instanceExample,
                     ),
                     keyboardType: TextInputType.number,
                   ),
@@ -160,16 +161,17 @@ class _MultiStepModalState extends State<MultiStepModal> {
               )
             : TextField(
                 controller: userIdController,
-                decoration: const InputDecoration(
-                  labelText: 'User ID',
-                  hintText: 'e.g. USER123',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.userId,
+                  hintText: AppLocalizations.of(context)!.userIdExample,
                 ),
                 autofocus: true,
+                maxLength: 15,
               ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
             TextButton(
               onPressed: () {
@@ -180,7 +182,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   if (workId.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('Work ID is required'),
+                        content: Text(AppLocalizations.of(context)!.workIdRequired),
                         backgroundColor: Theme.of(context).colorScheme.error,
                       ),
                     );
@@ -190,7 +192,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   if (instanceText.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('Instance number is required'),
+                        content: Text(AppLocalizations.of(context)!.instanceRequired),
                         backgroundColor: Theme.of(context).colorScheme.error,
                       ),
                     );
@@ -203,7 +205,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('Instance number must be a valid number'),
+                        content: Text(AppLocalizations.of(context)!.instanceInvalidNumber),
                         backgroundColor: Theme.of(context).colorScheme.error,
                       ),
                     );
@@ -221,7 +223,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   if (userId.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('User ID is required'),
+                        content: Text(AppLocalizations.of(context)!.userIdRequired),
                         backgroundColor: Theme.of(context).colorScheme.error,
                       ),
                     );
@@ -236,7 +238,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                   _nextStep();
                 }
               },
-              child: const Text('OK'),
+              child: Text(AppLocalizations.of(context)!.ok),
             ),
           ],
         );
@@ -279,7 +281,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
           [
             TextButton(
               onPressed: _openManualInput,
-              child: const Text("Manual Input"),
+              child: Text(AppLocalizations.of(context)!.manualInput),
             ),
             TextButton(
               onPressed: null,
@@ -301,7 +303,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                 });
               } else if (snapshot.hasError) {
                 body = Center(
-                  child: Text('Error fetching work details: ${snapshot.error}'),
+                  child: Text(AppLocalizations.of(context)!.errorFetchingWork(snapshot.error.toString())),
                 );
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   continueAction.value = null; // Disable on error
@@ -341,8 +343,9 @@ class _MultiStepModalState extends State<MultiStepModal> {
               } else {
                 // Work exists, show details
                 final workData = snapshot.data!;
-                final title = workData['title'] ?? 'Unknown Title';
-                final composer = workData['composer'] ?? 'Unknown Composer';
+                final l10n = AppLocalizations.of(context)!;
+                final title = workData['title'] ?? l10n.unknownTitle;
+                final composer = workData['composer'] ?? l10n.unknownComposer;
                 final userId = workData['user_id'];
 
                 if (userId != null) {
@@ -433,7 +436,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
                 });
               } else if (snapshot.hasError) {
                 body = Center(
-                  child: Text('Error fetching work details: ${snapshot.error}'),
+                  child: Text(AppLocalizations.of(context)!.errorFetchingWork(snapshot.error.toString())),
                 );
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   continueAction.value = null; // Disable on error
@@ -471,7 +474,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
               } else {
                 final userData = snapshot.data!;
                 // Adjust key based on your actual database structure
-                final name = userData['name'] ?? 'Unknown User';
+                final name = userData['name'] ?? AppLocalizations.of(context)!.unknownUser;
                 body = Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -582,18 +585,19 @@ class _MultiStepModalState extends State<MultiStepModal> {
               final isReturning =
                   snapshot.data![2] as bool; // checkExistingCheckout result
 
+              final l10n = AppLocalizations.of(context)!;
               final userName = switch (_user) {
                 ExistingUser() =>
-                  userData?['name'] as String? ?? "Unknown User",
+                  userData?['name'] as String? ?? l10n.unknownUser,
                 CreateUser(:final name) => name,
-                _ => "Unknown User",
+                _ => l10n.unknownUser,
               };
 
               final workTitle = switch (_work) {
                 ExistingWork() =>
-                  workData?['title'] as String? ?? "Unknown Work",
+                  workData?['title'] as String? ?? l10n.unknownTitle,
                 CreateWork(:final name) => name,
-                _ => "Unknown Work",
+                _ => l10n.unknownTitle,
               };
 
               final workInstance = switch (_work) {
@@ -733,7 +737,7 @@ class _MultiStepModalState extends State<MultiStepModal> {
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Checkout failed: $e'),
+            content: Text(AppLocalizations.of(context)!.checkoutFailed(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
             showCloseIcon: true,
           ),
@@ -833,13 +837,13 @@ class _MultiStepModalState extends State<MultiStepModal> {
             const SizedBox(height: 16),
             TextFormField(
               controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'Title',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.title,
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter a title';
+                  return AppLocalizations.of(context)!.pleaseEnterTitle;
                 }
                 return null;
               },

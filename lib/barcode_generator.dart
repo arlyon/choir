@@ -6,6 +6,7 @@ import 'package:barcode/barcode.dart' as bc;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
+import 'l10n/app_localizations.dart';
 
 class BarcodeGenerator {
   static Future<void> generateBarcodeSheet(
@@ -135,7 +136,7 @@ class BarcodeGenerator {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('PDF saved to $outputFile'),
+                content: Text(AppLocalizations.of(context)!.pdfSavedTo(outputFile)),
                 backgroundColor: Theme.of(context).colorScheme.primary,
               ),
             );
@@ -158,7 +159,7 @@ class BarcodeGenerator {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to generate PDF: $e'),
+            content: Text(AppLocalizations.of(context)!.failedToGeneratePdf(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );

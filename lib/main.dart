@@ -146,7 +146,7 @@ class _MyHomePageState extends State<MyHomePage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to refresh data. Check connection or logs.'),
+          content: Text(AppLocalizations.of(context)!.failedToRefresh),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -165,7 +165,7 @@ class _MyHomePageState extends State<MyHomePage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to export users: $e'),
+          content: Text(AppLocalizations.of(context)!.failedToExportUsers(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -180,95 +180,98 @@ class _MyHomePageState extends State<MyHomePage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: const Text('Add New User'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: userIdController,
-                  decoration: const InputDecoration(
-                    labelText: 'User ID',
-                    border: OutlineInputBorder(),
-                    helperText: 'Unique identifier for the user',
+          (context) {
+            final l10n = AppLocalizations.of(context)!;
+            return AlertDialog(
+              title: Text(l10n.addNewUser),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: userIdController,
+                    decoration: InputDecoration(
+                      labelText: l10n.userId,
+                      border: OutlineInputBorder(),
+                      helperText: l10n.userIdHelper,
+                    ),
                   ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: l10n.nameOptional,
+                      border: OutlineInputBorder(),
+                      helperText: l10n.nameHelper,
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      labelText: l10n.emailOptional,
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(l10n.cancel),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name (optional)',
-                    border: OutlineInputBorder(),
-                    helperText: 'If empty, will use User ID as name',
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email (optional)',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
+                FilledButton(
+                  onPressed: () async {
+                    final userId = userIdController.text.trim();
+                    if (userId.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.userIdRequired)),
+                      );
+                      return;
+                    }
+
+                    Navigator.of(context).pop();
+
+                    try {
+                      final name =
+                          nameController.text.trim().isEmpty
+                              ? userId
+                              : nameController.text.trim();
+                      final email =
+                          emailController.text.trim().isEmpty
+                              ? null
+                              : emailController.text.trim();
+
+                      await DatabaseHelper.instance.createUser(
+                        userId,
+                        name,
+                        email,
+                      );
+
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.userCreatedSuccess(userId)),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.failedToCreateUser(e.toString())),
+                            backgroundColor: Theme.of(context).colorScheme.error,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: Text(l10n.addUserButton),
                 ),
               ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () async {
-                  final userId = userIdController.text.trim();
-                  if (userId.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('User ID is required')),
-                    );
-                    return;
-                  }
-
-                  Navigator.of(context).pop();
-
-                  try {
-                    final name =
-                        nameController.text.trim().isEmpty
-                            ? userId
-                            : nameController.text.trim();
-                    final email =
-                        emailController.text.trim().isEmpty
-                            ? null
-                            : emailController.text.trim();
-
-                    await DatabaseHelper.instance.createUser(
-                      userId,
-                      name,
-                      email,
-                    );
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('User "$userId" created successfully'),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Failed to create user: $e'),
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Add User'),
-              ),
-            ],
-          ),
+            );
+          },
     );
   }
 
@@ -280,106 +283,110 @@ class _MyHomePageState extends State<MyHomePage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: const Text('Add New Work'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: workIdController,
-                  decoration: const InputDecoration(
-                    labelText: 'Work ID',
-                    border: OutlineInputBorder(),
-                    helperText: 'Unique identifier for the work',
+          (context) {
+            final l10n = AppLocalizations.of(context)!;
+            return AlertDialog(
+              title: Text(l10n.addNewWork),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: workIdController,
+                    decoration: InputDecoration(
+                      labelText: l10n.workId,
+                      border: OutlineInputBorder(),
+                      helperText: l10n.workIdHelper,
+                    ),
                   ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: l10n.titleOptional,
+                      border: OutlineInputBorder(),
+                      helperText: l10n.titleHelper,
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: composerController,
+                    decoration: InputDecoration(
+                      labelText: l10n.composerOptional,
+                      border: OutlineInputBorder(),
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(l10n.cancel),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Title (optional)',
-                    border: OutlineInputBorder(),
-                    helperText: 'If empty, will use Work ID as title',
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: composerController,
-                  decoration: const InputDecoration(
-                    labelText: 'Composer (optional)',
-                    border: OutlineInputBorder(),
-                  ),
-                  textCapitalization: TextCapitalization.words,
+                FilledButton(
+                  onPressed: () async {
+                    final workId = workIdController.text.trim();
+                    if (workId.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.workIdRequired)),
+                      );
+                      return;
+                    }
+
+                    Navigator.of(context).pop();
+
+                    try {
+                      final title =
+                          titleController.text.trim().isEmpty
+                              ? workId
+                              : titleController.text.trim();
+                      final composer =
+                          composerController.text.trim().isEmpty
+                              ? null
+                              : composerController.text.trim();
+
+                      await DatabaseHelper.instance.createWork(
+                        workId,
+                        title,
+                        composer,
+                      );
+
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.workCreatedSuccess(workId)),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.failedToCreateWork(e.toString())),
+                            backgroundColor: Theme.of(context).colorScheme.error,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: Text(l10n.addWorkButton),
                 ),
               ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () async {
-                  final workId = workIdController.text.trim();
-                  if (workId.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Work ID is required')),
-                    );
-                    return;
-                  }
-
-                  Navigator.of(context).pop();
-
-                  try {
-                    final title =
-                        titleController.text.trim().isEmpty
-                            ? workId
-                            : titleController.text.trim();
-                    final composer =
-                        composerController.text.trim().isEmpty
-                            ? null
-                            : composerController.text.trim();
-
-                    await DatabaseHelper.instance.createWork(
-                      workId,
-                      title,
-                      composer,
-                    );
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Work "$workId" created successfully'),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Failed to create work: $e'),
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Add Work'),
-              ),
-            ],
-          ),
+            );
+          },
     );
   }
 
   Widget _buildFabForCurrentTab() {
+    final l10n = AppLocalizations.of(context)!;
     switch (_currentIndex) {
       case 0: // Checkouts tab
         return FloatingActionButton(
           key: const ValueKey<String>('fab_checkouts'),
           heroTag: "scanner",
           onPressed: _openScanner,
-          tooltip: 'Scan QR Code',
+          tooltip: l10n.scanQrCode,
           child: const Icon(Icons.qr_code),
         );
       case 1: // Users tab
@@ -389,7 +396,7 @@ class _MyHomePageState extends State<MyHomePage> {
             FloatingActionButton(
               heroTag: "print_users",
               onPressed: _exportUsersList,
-              tooltip: 'Print Users List',
+              tooltip: l10n.printUsersList,
               child: const Icon(Icons.print),
             ),
             const SizedBox(height: 16),
@@ -397,7 +404,7 @@ class _MyHomePageState extends State<MyHomePage> {
               key: const ValueKey<String>('fab_users'),
               heroTag: "add_user",
               onPressed: _addUser,
-              tooltip: 'Add User',
+              tooltip: l10n.addUserTooltip,
               child: const Icon(Icons.add),
             ),
           ],
@@ -409,7 +416,7 @@ class _MyHomePageState extends State<MyHomePage> {
             FloatingActionButton(
               heroTag: "print_works",
               onPressed: _openBarcodeSheetGenerator,
-              tooltip: 'Generate Barcode Sheet',
+              tooltip: l10n.generateBarcodeSheet,
               child: const Icon(Icons.print),
             ),
             const SizedBox(height: 16),
@@ -417,7 +424,7 @@ class _MyHomePageState extends State<MyHomePage> {
               key: const ValueKey<String>('fab_works'),
               heroTag: "add_work",
               onPressed: _addWork,
-              tooltip: 'Add Work',
+              tooltip: l10n.addWorkTooltip,
               child: const Icon(Icons.add),
             ),
           ],
@@ -474,15 +481,18 @@ class _MyHomePageState extends State<MyHomePage> {
             _currentIndex = index;
           });
         },
-        items: const [
+        items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.assignment),
-            label: 'Checkouts',
+            label: AppLocalizations.of(context)!.checkouts,
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: AppLocalizations.of(context)!.users,
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.library_music),
-            label: 'Works',
+            label: AppLocalizations.of(context)!.works,
           ),
         ],
       ),
@@ -556,6 +566,7 @@ class _WorkSelectionModalState extends State<WorkSelectionModal> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -563,8 +574,8 @@ class _WorkSelectionModalState extends State<WorkSelectionModal> {
         children: [
           const SizedBox(height: 16),
           TextField(
-            decoration: const InputDecoration(
-              labelText: 'Search works...',
+            decoration: InputDecoration(
+              labelText: l10n.searchWorks,
               prefixIcon: Icon(Icons.search),
               border: OutlineInputBorder(),
             ),
@@ -576,7 +587,7 @@ class _WorkSelectionModalState extends State<WorkSelectionModal> {
               itemCount: _filteredWorks.length,
               itemBuilder: (context, index) {
                 final work = _filteredWorks[index];
-                final title = work['title']?.toString() ?? 'Unknown Title';
+                final title = work['title']?.toString() ?? l10n.unknownTitle;
                 final composer = work['composer']?.toString() ?? '';
 
                 return Card(
@@ -616,11 +627,11 @@ class _WorkSelectionModalState extends State<WorkSelectionModal> {
                 Column(
                   children: [
                     Text(
-                      '$_instanceCount instances',
+                      l10n.instances(_instanceCount),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Text(
-                      '${(_instanceCount / 33).ceil()} page${(_instanceCount / 33).ceil() != 1 ? 's' : ''}',
+                      l10n.pages((_instanceCount / 33).ceil()),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],

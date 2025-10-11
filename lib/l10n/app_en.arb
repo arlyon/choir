@@ -77,5 +77,233 @@
   "returning": "is returning",
   "checkingOut": "is checking out",
   "search": "Search",
-  "returnItem": "Return"
+  "returnItem": "Return",
+  "appTitle": "SSKor Note App",
+  "failedToRefresh": "Failed to refresh data. Check connection or logs.",
+  "failedToExportUsers": "Failed to export users: {error}",
+  "@failedToExportUsers": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "addNewUser": "Add New User",
+  "userId": "User ID",
+  "userIdHelper": "Unique identifier for the user",
+  "userIdHelperMaxLength": "Unique identifier for the user (max 15 characters)",
+  "nameOptional": "Name (optional)",
+  "nameHelper": "If empty, will use User ID as name",
+  "userIdRequired": "User ID is required",
+  "userCreatedSuccess": "User \"{userId}\" created successfully",
+  "@userCreatedSuccess": {
+    "placeholders": {
+      "userId": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToCreateUser": "Failed to create user: {error}",
+  "@failedToCreateUser": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "addUserButton": "Add User",
+  "addNewWork": "Add New Work",
+  "workId": "Work ID",
+  "workIdHelper": "Unique identifier for the work",
+  "workIdHelperMaxLength": "Unique identifier for the work (max 15 characters)",
+  "titleOptional": "Title (optional)",
+  "titleHelper": "If empty, will use Work ID as title",
+  "workIdRequired": "Work ID is required",
+  "workCreatedSuccess": "Work \"{workId}\" created successfully",
+  "@workCreatedSuccess": {
+    "placeholders": {
+      "workId": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToCreateWork": "Failed to create work: {error}",
+  "@failedToCreateWork": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "addWorkButton": "Add Work",
+  "scanQrCode": "Scan QR Code",
+  "printUsersList": "Print Users List",
+  "addUserTooltip": "Add User",
+  "generateBarcodeSheet": "Generate Barcode Sheet",
+  "addWorkTooltip": "Add Work",
+  "checkouts": "Checkouts",
+  "users": "Users",
+  "works": "Works",
+  "searchWorks": "Search works...",
+  "instances": "{count, plural, =1{1 instance} other{{count} instances}}",
+  "@instances": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pages": "{count, plural, =1{1 page} other{{count} pages}}",
+  "@pages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unknownTitle": "Unknown Title",
+  "unknownUser": "Unknown User",
+  "unknownComposer": "Unknown Composer",
+  "unknownDate": "Unknown date",
+  "invalidDate": "Invalid Date",
+  "unknown": "Unknown",
+  "idLabel": "ID: {id}",
+  "@idLabel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "emailLabel": "Email: {email}",
+  "@emailLabel": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "composerLabel": "Composer: {composer}",
+  "@composerLabel": {
+    "placeholders": {
+      "composer": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteUser": "Delete User",
+  "confirmDeleteUser": "Are you sure you want to delete \"{name}\"?",
+  "@confirmDeleteUser": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "userDeletionNotImplemented": "User deletion not implemented yet",
+  "failedToDeleteUser": "Failed to delete user: {error}",
+  "@failedToDeleteUser": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "delete": "Delete",
+  "deleteWork": "Delete Work",
+  "confirmDeleteWork": "Are you sure you want to delete \"{title}\"?",
+  "@confirmDeleteWork": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "workDeletionNotImplemented": "Work deletion not implemented yet",
+  "failedToDeleteWork": "Failed to delete work: {error}",
+  "@failedToDeleteWork": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "barcodeForTitle": "Barcode for \"{title}\"",
+  "@barcodeForTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "workIdLabel": "Work ID: {workId}",
+  "@workIdLabel": {
+    "placeholders": {
+      "workId": {
+        "type": "String"
+      }
+    }
+  },
+  "barcodeComingSoon": "Barcode generation feature coming soon!",
+  "close": "Close",
+  "enterPassword": "Enter Password",
+  "passwordPrompt": "Enter your password to access the application:",
+  "password": "Password",
+  "unlock": "Unlock",
+  "passwordRequired": "Password cannot be empty",
+  "confirmMusic": "Confirm Music",
+  "confirmPerson": "Confirm Person",
+  "summary": "Summary",
+  "enterWorkDetails": "Enter Work Details",
+  "enterUserId": "Enter User ID",
+  "workIdExample": "e.g. WORK123",
+  "instanceNumber": "Instance Number",
+  "instanceExample": "e.g. 1",
+  "userIdExample": "e.g. USER123",
+  "instanceRequired": "Instance number is required",
+  "instanceInvalidNumber": "Instance number must be a valid number",
+  "ok": "OK",
+  "manualInput": "Manual Input",
+  "errorFetchingWork": "Error fetching work details: {error}",
+  "@errorFetchingWork": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "checkoutFailed": "Checkout failed: {error}",
+  "@checkoutFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "title": "Title",
+  "pleaseEnterTitle": "Please enter a title",
+  "scannedUserId": "Scanned User ID: {userId}",
+  "@scannedUserId": {
+    "placeholders": {
+      "userId": {
+        "type": "String"
+      }
+    }
+  },
+  "pdfSavedTo": "PDF saved to {path}",
+  "@pdfSavedTo": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToGeneratePdf": "Failed to generate PDF: {error}",
+  "@failedToGeneratePdf": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

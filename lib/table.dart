@@ -238,15 +238,16 @@ class CheckOutCard extends StatelessWidget {
   }
 
   String _formatRelativeTime(String? timestampStr, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (timestampStr == null) {
-      return 'Unknown date';
+      return l10n.unknownDate;
     }
     try {
       final dateTime = DateTime.parse(timestampStr).toLocal();
       return timeago.format(dateTime, locale: 'en_short');
     } catch (e) {
       print("Error parsing timestamp '$timestampStr': $e");
-      return 'Invalid Date';
+      return l10n.invalidDate;
     }
   }
 }
@@ -334,7 +335,7 @@ class _CheckedOutListState extends State<CheckedOutList> {
       print("Error refreshing data in CheckedOutList: $e");
       if (mounted) {
         setState(() {
-          _error = "Failed to refresh data. Check connection or logs.";
+          _error = AppLocalizations.of(context)!.failedToRefresh;
         });
       }
     }
