@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -382,6 +383,10 @@ class _MyHomePageState extends State<MyHomePage> {
     final l10n = AppLocalizations.of(context)!;
     switch (_currentIndex) {
       case 0: // Checkouts tab
+        // Hide scanner button on desktop platforms
+        if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+          return const SizedBox.shrink();
+        }
         return FloatingActionButton(
           key: const ValueKey<String>('fab_checkouts'),
           heroTag: "scanner",
