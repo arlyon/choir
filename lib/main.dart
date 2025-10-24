@@ -88,6 +88,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late WriteModel _writeModel;
   int _currentIndex = 0;
+  final GlobalKey<UsersViewState> _usersViewKey = GlobalKey<UsersViewState>();
 
   @override
   void initState() {
@@ -158,11 +159,15 @@ class _MyHomePageState extends State<MyHomePage> {
     HapticFeedback.heavyImpact();
 
     try {
-      final users = await DatabaseHelper.instance.fetchAllUsers();
+      // Get selected users from the UsersView
+      final users = _usersViewKey.currentState?.selectedUsers ?? await DatabaseHelper.instance.fetchAllUsers();
 
       if (!mounted) return;
 
       await BarcodeGenerator.generateUsersPdf(users, context);
+
+      // Clear selection after printing
+      _usersViewKey.currentState?.clearSelection();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -475,7 +480,7 @@ class _MyHomePageState extends State<MyHomePage> {
         index: _currentIndex,
         children: [
           CheckedOutList(writeModel: _writeModel),
-          UsersView(writeModel: _writeModel),
+          UsersView(key: _usersViewKey, writeModel: _writeModel),
           WorksView(writeModel: _writeModel),
         ],
       ),

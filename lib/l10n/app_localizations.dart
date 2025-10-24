@@ -218,7 +218,7 @@ abstract class AppLocalizations {
   /// **'Apply'**
   String get apply;
 
-  /// Archived Items ({count})
+  /// Archived Itemscl ({count})
   ///
   /// In en, this message translates to:
   /// **'Archived Items ({count})'**
@@ -769,6 +769,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to generate PDF: {error}'**
   String failedToGeneratePdf(String error);
+
+  /// No description provided for @cannotDeleteUserWithCheckouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot delete user \"{name}\" because they currently have notes checked out. Please return all notes before deleting.'**
+  String cannotDeleteUserWithCheckouts(String name);
+
+  /// No description provided for @typeNameToConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Type \"{name}\" to confirm:'**
+  String typeNameToConfirm(String name);
+
+  /// No description provided for @nameDoesNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Name does not match. Deletion cancelled.'**
+  String get nameDoesNotMatch;
+
+  /// No description provided for @userDeletedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'User \"{name}\" deleted successfully'**
+  String userDeletedSuccess(String name);
+
+  /// No description provided for @usersPdfFilename.
+  ///
+  /// In en, this message translates to:
+  /// **'users.pdf'**
+  String get usersPdfFilename;
+
+  /// No description provided for @userIdsListShareText.
+  ///
+  /// In en, this message translates to:
+  /// **'User IDs list'**
+  String get userIdsListShareText;
 }
 
 class _AppLocalizationsDelegate

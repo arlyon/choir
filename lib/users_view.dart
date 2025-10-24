@@ -12,15 +12,39 @@ class UsersView extends StatefulWidget {
   State<UsersView> createState() => _UsersViewState();
 }
 
-class _UsersViewState extends State<UsersView> {
+// Public interface to access UsersView state
+abstract class UsersViewState extends State<UsersView> {
+  List<Map<String, dynamic>> get selectedUsers;
+  void clearSelection();
+}
+
+class _UsersViewState extends UsersViewState {
   List<Map<String, dynamic>> _users = [];
   bool _isLoading = true;
   String? _error;
+  final Set<String> _selectedUserIds = {};
 
   @override
   void initState() {
     super.initState();
     _loadUsers();
+  }
+
+  void _toggleUserSelection(String userId) {
+    setState(() {
+      if (_selectedUserIds.contains(userId)) {
+        _selectedUserIds.remove(userId);
+      } else {
+        _selectedUserIds.add(userId);
+      }
+    });
+  }
+
+  @override
+  void clearSelection() {
+    setState(() {
+      _selectedUserIds.clear();
+    });
   }
 
   Future<void> _loadUsers() async {
@@ -177,18 +201,44 @@ class _UsersViewState extends State<UsersView> {
         itemCount: _users.length,
         itemBuilder: (context, index) {
           final user = _users[index];
-          return UserCard(user: user, onUserUpdated: _loadUsers);
+          final userId = user['user_id']?.toString() ?? '';
+          final isSelected = _selectedUserIds.contains(userId);
+          return UserCard(
+            user: user,
+            onUserUpdated: _loadUsers,
+            isSelected: isSelected,
+            onLongPress: () => _toggleUserSelection(userId),
+            onTap: _selectedUserIds.isNotEmpty ? () => _toggleUserSelection(userId) : null,
+          );
         },
       ),
     );
+  }
+
+  @override
+  List<Map<String, dynamic>> get selectedUsers {
+    if (_selectedUserIds.isEmpty) {
+      return _users;
+    }
+    return _users.where((user) => _selectedUserIds.contains(user['user_id'])).toList();
   }
 }
 
 class UserCard extends StatelessWidget {
   final Map<String, dynamic> user;
   final VoidCallback onUserUpdated;
+  final bool isSelected;
+  final VoidCallback onLongPress;
+  final VoidCallback? onTap;
 
-  const UserCard({super.key, required this.user, required this.onUserUpdated});
+  const UserCard({
+    super.key,
+    required this.user,
+    required this.onUserUpdated,
+    required this.isSelected,
+    required this.onLongPress,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -200,11 +250,16 @@ class UserCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
+        onTap: onTap,
+        onLongPress: onLongPress,
         leading: CircleAvatar(
-          child: Text(
-            name.isNotEmpty ? name[0].toUpperCase() : '?',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          backgroundColor: isSelected ? Theme.of(context).colorScheme.primary : null,
+          child: isSelected
+              ? Icon(Icons.check, color: Theme.of(context).colorScheme.onPrimary)
+              : Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
         ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
         subtitle: Column(
@@ -215,56 +270,142 @@ class UserCard extends StatelessWidget {
           ],
         ),
         isThreeLine: email != null && email.isNotEmpty,
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'delete') {
+              _showDeleteConfirmation(context, user, onUserUpdated);
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem<String>(
+              value: 'delete',
+              child: Row(
+                children: [
+                  Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                  const SizedBox(width: 8),
+                  Text(l10n.delete),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void _showDeleteConfirmation(
+  Future<void> _showDeleteConfirmation(
     BuildContext context,
     Map<String, dynamic> user,
     VoidCallback onUserUpdated,
-  ) {
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     final name = user['name']?.toString() ?? l10n.unknown;
+    final userId = user['user_id']?.toString() ?? '';
+    final nameController = TextEditingController();
+
+    // Check if user has any active checkouts
+    final activeCheckouts = await DatabaseHelper.instance.query(
+      'SELECT COUNT(*) as count FROM checkouts WHERE user_id = ? AND return_timestamp IS NULL',
+      positional: [userId],
+    );
+
+    final hasActiveCheckouts = (activeCheckouts.first['count'] as int) > 0;
+
+    if (!context.mounted) return;
+
+    if (hasActiveCheckouts) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.deleteUser),
+          content: Text(l10n.cannotDeleteUserWithCheckouts(name)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.cancel),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(l10n.deleteUser),
-            content: Text(l10n.confirmDeleteUser(name)),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(l10n.cancel),
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteUser),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.confirmDeleteUser(name)),
+            const SizedBox(height: 16),
+            Text(
+              l10n.typeNameToConfirm(name),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                hintText: name,
+                border: const OutlineInputBorder(),
               ),
-              FilledButton(
-                onPressed: () async {
-                  Navigator.of(context).pop();
-
-                  try {
-                    // Note: You may want to add a deleteUser method to DatabaseHelper
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.userDeletionNotImplemented),
-                      ),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.failedToDeleteUser(e.toString())),
-                        backgroundColor: Theme.of(context).colorScheme.error,
-                      ),
-                    );
-                  }
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-                child: Text(l10n.delete),
-              ),
-            ],
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(l10n.cancel),
           ),
+          FilledButton(
+            onPressed: () async {
+              if (nameController.text.trim() != name) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.nameDoesNotMatch),
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                );
+                return;
+              }
+
+              Navigator.of(context).pop();
+
+              try {
+                await DatabaseHelper.instance.execute(
+                  'DELETE FROM users WHERE user_id = ?',
+                  positional: [userId],
+                );
+                onUserUpdated();
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.userDeletedSuccess(name)),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.failedToDeleteUser(e.toString())),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  );
+                }
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
     );
   }
 }

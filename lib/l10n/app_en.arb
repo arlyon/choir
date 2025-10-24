@@ -60,7 +60,7 @@
   "apply": "Apply",
   "archivedItems": "Archived Items ({count})",
   "@archivedItems": {
-    "description": "Archived Items ({count})",
+    "description": "Archived Itemscl ({count})",
     "placeholders": {
       "count": {
         "type": "int",
@@ -305,5 +305,32 @@
         "type": "String"
       }
     }
-  }
+  },
+  "cannotDeleteUserWithCheckouts": "Cannot delete user \"{name}\" because they currently have notes checked out. Please return all notes before deleting.",
+  "@cannotDeleteUserWithCheckouts": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "typeNameToConfirm": "Type \"{name}\" to confirm:",
+  "@typeNameToConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "nameDoesNotMatch": "Name does not match. Deletion cancelled.",
+  "userDeletedSuccess": "User \"{name}\" deleted successfully",
+  "@userDeletedSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "usersPdfFilename": "users.pdf",
+  "userIdsListShareText": "User IDs list"
 }

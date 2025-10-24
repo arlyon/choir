@@ -198,13 +198,14 @@ class BarcodeGenerator {
     List<Map<String, dynamic>> users,
     BuildContext context,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final userIds =
         users.map((user) => user['user_id']?.toString() ?? '').toList();
     await generateBarcodeListPdf(
       barcodeData: userIds,
       title: null,
-      fileName: 'users.pdf',
-      shareText: 'User IDs list',
+      fileName: l10n.usersPdfFilename,
+      shareText: l10n.userIdsListShareText,
       context: context,
     );
   }

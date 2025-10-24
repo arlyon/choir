@@ -404,4 +404,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String failedToGeneratePdf(String error) {
     return 'Failed to generate PDF: $error';
   }
+
+  @override
+  String cannotDeleteUserWithCheckouts(String name) {
+    return 'Cannot delete user \"$name\" because they currently have notes checked out. Please return all notes before deleting.';
+  }
+
+  @override
+  String typeNameToConfirm(String name) {
+    return 'Type \"$name\" to confirm:';
+  }
+
+  @override
+  String get nameDoesNotMatch => 'Name does not match. Deletion cancelled.';
+
+  @override
+  String userDeletedSuccess(String name) {
+    return 'User \"$name\" deleted successfully';
+  }
+
+  @override
+  String get usersPdfFilename => 'users.pdf';
+
+  @override
+  String get userIdsListShareText => 'User IDs list';
 }

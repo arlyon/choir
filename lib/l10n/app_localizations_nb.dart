@@ -407,4 +407,28 @@ class AppLocalizationsNb extends AppLocalizations {
   String failedToGeneratePdf(String error) {
     return 'Kunne ikke generere PDF: $error';
   }
+
+  @override
+  String cannotDeleteUserWithCheckouts(String name) {
+    return 'Kan ikke slette bruker \"$name\" fordi de har noter utlånt. Returner alle noter før sletting.';
+  }
+
+  @override
+  String typeNameToConfirm(String name) {
+    return 'Skriv \"$name\" for å bekrefte:';
+  }
+
+  @override
+  String get nameDoesNotMatch => 'Navnet stemmer ikke. Sletting avbrutt.';
+
+  @override
+  String userDeletedSuccess(String name) {
+    return 'Bruker \"$name\" slettet';
+  }
+
+  @override
+  String get usersPdfFilename => 'brukere.pdf';
+
+  @override
+  String get userIdsListShareText => 'Bruker-ID liste';
 }

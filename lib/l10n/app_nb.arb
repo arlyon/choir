@@ -110,5 +110,11 @@
     "pleaseEnterTitle": "Skriv inn en tittel",
     "scannedUserId": "Skannet bruker-ID: {userId}",
     "pdfSavedTo": "PDF lagret til {path}",
-    "failedToGeneratePdf": "Kunne ikke generere PDF: {error}"
+    "failedToGeneratePdf": "Kunne ikke generere PDF: {error}",
+    "cannotDeleteUserWithCheckouts": "Kan ikke slette bruker \"{name}\" fordi de har noter utlånt. Returner alle noter før sletting.",
+    "typeNameToConfirm": "Skriv \"{name}\" for å bekrefte:",
+    "nameDoesNotMatch": "Navnet stemmer ikke. Sletting avbrutt.",
+    "userDeletedSuccess": "Bruker \"{name}\" slettet",
+    "usersPdfFilename": "brukere.pdf",
+    "userIdsListShareText": "Bruker-ID liste"
 }
