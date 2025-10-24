@@ -12,6 +12,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'auth_service.dart';
 import 'l10n/app_localizations.dart';
+import 'id_validator.dart';
 part 'database_helper.freezed.dart';
 
 class OnlineModel with ChangeNotifier {
@@ -249,16 +250,36 @@ class DatabaseHelper {
   }
 
   Future<void> createUser(String userId, String name, String? email) async {
+    final (isValid, result) = IdValidator.validateAndNormalize(userId);
+    if (!isValid) {
+      throw Exception('Invalid user ID: $result');
+    }
+
+    final normalizedId = result;
+    if (IdValidator.wasNormalized(userId, normalizedId)) {
+      print('User ID normalized from "$userId" to "$normalizedId"');
+    }
+
     await execute(
       'INSERT OR REPLACE INTO users (user_id, name, email) VALUES (?, ?, ?)',
-      positional: [userId, name, email],
+      positional: [normalizedId, name, email],
     );
   }
 
   Future<void> createWork(String workId, String title, String? composer) async {
+    final (isValid, result) = IdValidator.validateAndNormalize(workId);
+    if (!isValid) {
+      throw Exception('Invalid work ID: $result');
+    }
+
+    final normalizedId = result;
+    if (IdValidator.wasNormalized(workId, normalizedId)) {
+      print('Work ID normalized from "$workId" to "$normalizedId"');
+    }
+
     await execute(
       'INSERT OR REPLACE INTO works (work_id, title, composer) VALUES (?, ?, ?)',
-      positional: [workId, title, composer],
+      positional: [normalizedId, title, composer],
     );
   }
 
@@ -302,25 +323,47 @@ class DatabaseHelper {
     } else {
       var tx = await _onlineClient?.transaction();
 
+      // Track normalized IDs for the checkout insert
+      String actualUserId = user.id;
+      String actualWorkId = work.id;
+
       if (user case CreateUser(:final id, :final name, :final email)) {
+        final (isValid, result) = IdValidator.validateAndNormalize(id);
+        if (!isValid) {
+          throw Exception('Invalid user ID: $result');
+        }
+        actualUserId = result;
+        if (IdValidator.wasNormalized(id, actualUserId)) {
+          print('User ID normalized from "$id" to "$actualUserId"');
+        }
+
         await tx?.execute(
           "insert or ignore into users (user_id, name, email) values (?, ?, ?)",
-          positional: [id, name, email],
+          positional: [actualUserId, name, email],
         );
       }
 
       if (work case CreateWork(:final id, :final name, :final composer)) {
+        final (isValid, result) = IdValidator.validateAndNormalize(id);
+        if (!isValid) {
+          throw Exception('Invalid work ID: $result');
+        }
+        actualWorkId = result;
+        if (IdValidator.wasNormalized(id, actualWorkId)) {
+          print('Work ID normalized from "$id" to "$actualWorkId"');
+        }
+
         await tx?.execute(
           "insert or ignore into works (work_id, title, composer) values (?, ?, ?)",
-          positional: [id, name, composer],
+          positional: [actualWorkId, name, composer],
         );
       }
 
-      print("Checking out item: workId=$work.id, userId=$user.id");
+      print("Checking out item: workId=$actualWorkId, userId=$actualUserId");
 
       final id = await tx?.execute(
         'INSERT INTO checkouts (work_id, user_id, checkout_timestamp, return_timestamp, instance) VALUES (?, ?, ?, NULL, ?)',
-        positional: [work.id, user.id, now, work.instance],
+        positional: [actualWorkId, actualUserId, now, work.instance],
       );
 
       print("attempting commit");
