@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="no">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Brukerveiledning SSKor Note-app</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @font-face {
+                font-family: "AktivGrotesk";
+                src: url("assets/fonts/AktivGrotesk-Regular.ttf")
+                    format("truetype");
+                font-weight: 400;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: "AktivGrotesk";
+                src: url("assets/fonts/AktivGrotesk-Medium.ttf")
+                    format("truetype");
+                font-weight: 500;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: "AktivGrotesk";
+                src: url("assets/fonts/AktivGrotesk-Bold.ttf")
+                    format("truetype");
+                font-weight: 700;
+                font-style: normal;
+            }
+            body {
+                font-family: "AktivGrotesk", sans-serif;
+            }
+            h1,
+            h2,
+            h3 {
+                font-weight: 600;
+            }
+
+            @media (min-width: 1800px) {
+                .container {
+                    max-width: 1800px !important;
+                }
+            }
+            .image-column img {
+                max-width: 350px; /* Make images responsive within their column */
+                height: auto;
+                border-radius: 0.75rem;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                border: 1px solid #e5e7eb;
+            }
+            section:last-of-type {
+                border-bottom: none;
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+            li {
+                position: relative;
+                padding-left: 1.25rem;
+                margin-bottom: 0.5rem; /* Add some space between list items */
+            }
+            li::before {
+                content: "•";
+                position: absolute;
+                left: 0;
+                top: 0.1em; /* Adjust vertical alignment */
+                color: hsl(120, 23.52941176%, 60%); /* Sage green */
+            }
+            .container {
+                margin: 0 auto;
+                padding: 2rem 1rem;
+            }
+            .text-column {
+                max-width: 500px;
+                position: sticky;
+                top: 0;
+                padding: 4em 2em;
+                max-height: 100vh;
+                overflow-y: scroll;
+            }
+            .image-column {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 2em;
+                padding: 4em 2em;
+            }
+            /* Add some gap between grid columns */
+            .grid-section {
+                display: flex;
+                gap: 2rem; /* Add gap between columns */
+            }
+            @media (min-width: 768px) {
+                /* md breakpoint */
+                .grid-section {
+                    grid-template-columns: repeat(
+                        2,
+                        minmax(0, 1fr)
+                    ); /* 2 columns on medium screens and up */
+                }
+            }
+        </style>
+    </head>
+    <body class="bg-gray-50 text-gray-800 leading-relaxed">
+        <header class="bg-[hsl(120,23.52941176%,60%)]">
+            <div
+                class="container flex flex-row items-center justify-between gap-4"
+            >
+                <a href="/" class="w-48 block">
+                    <img
+                        src="https://images.squarespace-cdn.com/content/v1/5e41708c2aa95948bda8ab4a/1584992839883-QIPL29TNFYE3MVXL1SFA/Logo+%282%29+%282%29.png?format=1500w"
+                        alt="Stavanger Symfonikor"
+                        fetchpriority="high"
+                        loading="eager"
+                        decoding="async"
+                        data-loader="raw"
+                    />
+                </a>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">
+                    Brukerveiledning
+                </h1>
+            </div>
+        </header>
+        <div class="container">
+            <main>
+                <!-- Installasjon - Single Column -->
+                <section style="padding: 4em 2em">
+                    <h2
+                        class="text-2xl font-semibold mb-4"
+                        style="color: hsl(120, 23.52941176%, 40%)"
+                    >
+                        Installasjon
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">
+                                For å installere app på Android mobiltelefon:
+                            </h3>
+                            <ol class="list-decimal list-inside space-y-1 pl-4">
+                                <li>
+                                    Åpne <strong>Google Play</strong> og let
+                                    etter "SSKOR".
+                                </li>
+                                <li>Trykk på <strong>Installer</strong>.</li>
+                            </ol>
+                            <p class="mt-2">
+                                <a
+                                    href="https://play.google.com/store/apps/details?id=dev.arlyon.sskor"
+                                    target="_blank"
+                                    class="underline"
+                                    style="color: hsl(120, 23.52941176%, 40%)"
+                                    onmouseover="this.style.color='hsl(120, 23.52941176%, 30%)'"
+                                    onmouseout="this.style.color='hsl(120, 23.52941176%, 40%)'"
+                                    >Last ned fra Google Play Store</a
+                                >
+                            </p>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">
+                                For å installere app på Windows PC:
+                            </h3>
+                            <ol class="list-decimal list-inside space-y-1 pl-4">
+                                <li>
+                                    Last ned Windows-versjonen ved å klikke på
+                                    lenken nedenfor.
+                                </li>
+                                <li>
+                                    Pakk ut zip-filen til en ønsket plassering
+                                    på din Windows PC.
+                                </li>
+                                <li>
+                                    Start appen ved å åpne katalogen og
+                                    dobbeltklikke på filen "choir".
+                                </li>
+                            </ol>
+                            <p class="mt-2">
+                                <a
+                                    href="windows.zip"
+                                    download
+                                    class="underline"
+                                    style="color: hsl(120, 23.52941176%, 40%)"
+                                    onmouseover="this.style.color='hsl(120, 23.52941176%, 30%)'"
+                                    onmouseout="this.style.color='hsl(120, 23.52941176%, 40%)'"
+                                    >Last ned Windows-versjon (ZIP)</a
+                                >
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Bruk av App - Single Column -->
+                <section style="padding: 4em 2em">
+                    <h2
+                        class="text-2xl font-semibold mb-4"
+                        style="color: hsl(120, 23.52941176%, 40%)"
+                    >
+                        Bruk av App
+                    </h2>
+                    <p>
+                        Windows-appen og Android-appen er ganske like, bortsett
+                        fra at Windows-appen ikke kan skanne strekkoder på noter
+                        og brukere.
+                    </p>
+                </section>
+
+                <!-- Brukere/Medlemmer - Two Columns -->
+                <section class="grid-section items-start">
+                    <div class="text-column">
+                        <h2
+                            class="text-2xl font-semibold mb-4"
+                            style="color: hsl(120, 23.52941176%, 40%)"
+                        >
+                            Brukere/Medlemmer
+                        </h2>
+                        <p class="mb-4">
+                            Denne siden kan brukes til å redigere medlemmer i
+                            koret og skrive ut strekkoder.
+                        </p>
+                        <p class="italic text-gray-600 mb-6">
+                            Her listes alle kormedlemmer som er registrert i
+                            appen.
+                        </p>
+
+                        <h3 class="text-lg font-semibold mb-2">
+                            Legge inn et nytt medlem:
+                        </h3>
+                        <ul class="mb-4">
+                            <li>
+                                Trykk på <strong>pluss-knappen</strong> (+).
+                            </li>
+                            <li>
+                                Legg inn en <strong>Bruker-ID</strong> som
+                                brukes for å generere strekkode. Denne bør være
+                                kort, helst et fornavn og initialer for følgende
+                                navn (ex: Kari S T).
+                            </li>
+                            <li>
+                                Legg inn brukerens
+                                <strong>fulle navn</strong> for lettere visning
+                                i appen (valgfritt).
+                            </li>
+                            <li>
+                                Legg inn <strong>mail-adresse</strong> om
+                                ønskelig.
+                            </li>
+                            <li>Lagre.</li>
+                        </ul>
+
+                        <h3 class="text-lg font-semibold mb-2 mt-6">
+                            Slette et medlem som har sluttet:
+                        </h3>
+                        <ul class="mb-4">
+                            <li>
+                                Bruk de <strong>tre prikkene</strong> (⋮) til
+                                høyre for navnet og velg <strong>slett</strong>.
+                            </li>
+                            <li>
+                                Du kan bare slette brukere som ikke har noter
+                                utlånt.
+                            </li>
+                        </ul>
+
+                        <h3 class="text-lg font-semibold mb-2 mt-6">
+                            Skrive ut strekkoder for medlemmer:
+                        </h3>
+                        <ul class="mb-4">
+                            <li>
+                                Velg medlemmer i listen med å trykke/klikke
+                                lenge på den første og så trykke/klikke på
+                                resten. Vil du skrive ut alle medlemmene velger
+                                du ingen.
+                            </li>
+                            <li>
+                                Trykk på <strong>printer-ikonet</strong> (🖨️).
+                                Det blir generert en pdf.
+                            </li>
+                            <li>
+                                Velg hvor du vil legge filen, f.eks. Windows
+                                explorer.
+                            </li>
+                            <li>
+                                Åpne filen på en mobil/PC som er tilkoblet
+                                printer og velg <strong>Skriv ut</strong>.
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="image-column">
+                        <img src="ks2S8axB.jpg" alt="Liste over brukere" />
+                        <img
+                            src="9lYpbFUQ.jpg"
+                            alt="Dialog for å legge til ny bruker"
+                        />
+                        <img src="Bv6NlrUm.jpg" alt="Slette-knapp for bruker" />
+                        <img
+                            src="VWPaIJdF.jpg"
+                            alt="Valg av brukere for utskrift"
+                        />
+                        <img
+                            src="xi92A6DQ.jpg"
+                            alt="Lagre/dele PDF med brukerstrekkoder"
+                        />
+                    </div>
+                </section>
+
+                <!-- Verk - Two Columns -->
+                <section class="grid-section items-start">
+                    <div class="text-column">
+                        <h2
+                            class="text-2xl font-semibold mb-4"
+                            style="color: hsl(120, 23.52941176%, 40%)"
+                        >
+                            Verk
+                        </h2>
+                        <p class="mb-4">
+                            Denne siden kan brukes til å legge til nye verk og
+                            skrive ut strekkoder.
+                        </p>
+                        <p class="italic text-gray-600 mb-6">
+                            Her listes alle verk som er registrert i appen.
+                        </p>
+
+                        <h3 class="text-lg font-semibold mb-2">
+                            Legge til et nytt verk:
+                        </h3>
+                        <ul class="mb-4">
+                            <li>
+                                Trykk på <strong>pluss-ikonet</strong> (+) og
+                                legg til et nytt verk.
+                            </li>
+                            <li>
+                                Bruk et kort navn for <strong>Verk-ID</strong>,
+                                dette skal generere strekkoden.
+                            </li>
+                            <li>
+                                Legg inn <strong>lang tittel</strong> og
+                                eventuelt <strong>komponist</strong> hvis
+                                ønskelig.
+                            </li>
+                            <li>Lagre.</li>
+                        </ul>
+
+                        <h3 class="text-lg font-semibold mb-2 mt-6">
+                            Skrive ut strekkoder for et verk:
+                        </h3>
+                        <ul class="mb-4">
+                            <li>
+                                Trykk på <strong>printer-ikonet</strong> (🖨️).
+                            </li>
+                            <li>
+                                Helt nederst, velg hvor mange sider du vil
+                                skrive ut:
+                                <ul class="list-disc space-y-1 pl-5 mt-2">
+                                    <li>
+                                        Den vil alltid begynne på nummer 1 og
+                                        skrive 33 strekkoder per side.
+                                    </li>
+                                    <li>
+                                        Vil du bare legge til nummer til
+                                        eksisterende strekkoder, f.eks. du bare
+                                        trenger nummer 60-80, så skriv ut tre
+                                        sider, men i printer-appen bare skriv ut
+                                        siste siden. Fra dette arket bruk de
+                                        klistrelappene du trenger.
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>Velg et verk du vil skrive ut for.</li>
+                            <li>
+                                Velg hvor du vil legge filen, f.eks. Windows
+                                explorer.
+                            </li>
+                            <li>
+                                Åpne filen på en mobil/PC som er tilkoblet
+                                printer og velg <strong>Skriv ut</strong>.
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="image-column space-y-4">
+                        <img src="ZEPILGby.jpg" alt="Liste over verk" />
+                        <img
+                            src="BD6DiUq1.jpg"
+                            alt="Dialog for å legge til nytt verk"
+                        />
+                        <img
+                            src="bFSocTXr.jpg"
+                            alt="Dialog for utskrift av verk-strekkoder"
+                        />
+                    </div>
+                </section>
+
+                <!-- Utlån og retur - Two Columns -->
+                <section class="grid-section items-start">
+                    <div class="text-column">
+                        <h2
+                            class="text-2xl font-semibold mb-4"
+                            style="color: hsl(120, 23.52941176%, 40%)"
+                        >
+                            Utlån og retur
+                        </h2>
+                        <p class="italic text-gray-600 mb-6">
+                            Her skannes strekkoder ved utlån og retur. Alle lån
+                            som er registrert vil listes her.
+                        </p>
+
+                        <h3 class="text-lg font-semibold mb-2">
+                            Låne ut nye noter:
+                        </h3>
+                        <ul class="mb-4">
+                            <li>
+                                Pass på du har strekkode for medlem og noter.
+                                Hvis ikke, følg stegene over.
+                            </li>
+                            <li>Skann først strekkoden på noten.</li>
+                            <li>Skann så strekkoden til medlemmet.</li>
+                            <li>
+                                Listen over utlånte noter blir nå oppdatert.
+                            </li>
+                        </ul>
+
+                        <h3 class="text-lg font-semibold mb-2 mt-6">
+                            Returnere noter:
+                        </h3>
+                        <ul class="mb-4">
+                            <li>Skann strekkoden på noten.</li>
+                            <li>
+                                Lånet vil nå bli flyttet fra Utlån til Arkivert.
+                            </li>
+                        </ul>
+
+                        <h3 class="text-lg font-semibold mb-2 mt-6">
+                            Se noter som er innlevert:
+                        </h3>
+                        <ul class="mb-4">
+                            <li>
+                                Trykk på <strong>Arkivert-knappen</strong> og
+                                alle noter som er innlevert listes.
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="image-column space-y-4">
+                        <img src="gafNE00J.jpg" alt="Hovedskjerm for utlån" />
+                        <img src="4rxlAr67.jpg" alt="Scanning av QR-kode" />
+                        <img src="ispE2CgV.jpg" alt="Bekreftelse på utlån" />
+                        <img
+                            src="Twuzjkxg.jpg"
+                            alt="Liste over arkiverte utlån"
+                        />
+                    </div>
+                </section>
+
+                <!-- Filtrere - Two Columns -->
+                <section class="grid-section items-start">
+                    <div class="text-column">
+                        <h2
+                            class="text-2xl font-semibold mb-4"
+                            style="color: hsl(120, 23.52941176%, 40%)"
+                        >
+                            Filtrere på medlemmer eller noter
+                        </h2>
+                        <p class="mb-4">
+                            Trykk på <strong>Person</strong>- eller
+                            <strong>Verk</strong>-knappen og velg en eller
+                            flere, du kan begynne å taste inn navn for å skrumpe
+                            inn listen.
+                        </p>
+                        <p class="mt-4">
+                            Utlån-listen, og Arkivert-listen vil nå bare vise de
+                            du har filtrert ut. For å slette filter kryss vekk
+                            filteret i knapperekken øverst eller trykk på
+                            Person/Verk og velg vekk alle kryss.
+                        </p>
+                    </div>
+                    <div class="image-column space-y-4">
+                        <img
+                            src="_7UX2WZG.jpg"
+                            alt="Filtrert liste som viser kun én person"
+                        />
+                        <img src="ImP-Qegl.jpg" alt="Søkedialog for Person" />
+                        <img src="9lrKi8WY.jpg" alt="Søkedialog for Verk" />
+                    </div>
+                </section>
+            </main>
+        </div>
+    </body>
+</html>
